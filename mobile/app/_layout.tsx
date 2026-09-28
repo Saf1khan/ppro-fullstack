@@ -7,7 +7,7 @@ import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { theme } from '../src/theme';
 
 function NavigationGuard() {
-  const { status } = useAuth();
+  const { status, user } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
@@ -16,13 +16,25 @@ function NavigationGuard() {
 
     const inAuthGroup = segments[0] === '(auth)';
     const inProtectedGroup = segments[0] === '(app)';
+    const inOnboardingGroup = segments[0] === '(onboarding)';
 
-    if (status === 'unauthenticated' && inProtectedGroup) {
+    if (status === 'unauthenticated' && (inProtectedGroup || inOnboardingGroup)) {
       router.replace('/(auth)/login');
-    } else if (status === 'authenticated' && inAuthGroup) {
-      router.replace('/(app)');
+    } else if (status === 'authenticated') {
+      if (user && user.has_profile === false) {
+        // Needs first-login profile onboarding
+        if (!inOnboardingGroup) {
+          router.replace('/(onboarding)/profile');
+        }
+      } else if (user && user.has_profile === true) {
+        // Already has completed profile
+        const segs = segments as string[];
+        if (inAuthGroup || (inOnboardingGroup && segs[1] === 'profile')) {
+          router.replace('/(app)');
+        }
+      }
     }
-  }, [status, segments]);
+  }, [status, segments, user]);
 
   if (status === 'initializing') {
     return (

@@ -14,6 +14,7 @@ from app.schemas.auth import (
     VerifyEmailRequest,
 )
 from app.services.auth_service import auth_service
+from app.services.profile_service import profile_service
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -93,5 +94,9 @@ async def login(
 )
 async def get_me(
     current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db),
 ) -> UserResponse:
-    return UserResponse.model_validate(current_user)
+    profile = await profile_service.get_profile(session, current_user.id)
+    resp = UserResponse.model_validate(current_user)
+    resp.has_profile = profile is not None
+    return resp

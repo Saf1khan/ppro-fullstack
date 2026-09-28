@@ -29,6 +29,7 @@ export interface UserResponse {
   email: string;
   is_email_verified: boolean;
   created_at: string;
+  has_profile: boolean;
 }
 
 export interface AuthMessageResponse {

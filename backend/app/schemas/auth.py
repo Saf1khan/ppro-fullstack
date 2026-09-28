@@ -76,6 +76,7 @@ class UserResponse(BaseModel):
     email: str
     is_email_verified: bool
     created_at: datetime
+    has_profile: bool = False
 
 
 class AuthMessageResponse(BaseModel):

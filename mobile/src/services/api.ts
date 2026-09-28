@@ -117,6 +117,13 @@ export const api = {
       body: body ? JSON.stringify(body) : undefined,
     }),
 
+  put: <T>(endpoint: string, body?: unknown, options?: RequestInit) =>
+    request<T>(endpoint, {
+      ...options,
+      method: 'PUT',
+      body: body ? JSON.stringify(body) : undefined,
+    }),
+
   delete: <T>(endpoint: string, options?: RequestInit) =>
     request<T>(endpoint, { ...options, method: 'DELETE' }),
 
@@ -151,3 +158,23 @@ export const authApi = {
     return api.get<UserResponse>('/auth/me');
   },
 };
+
+/**
+ * Profile API Service (Phase 4)
+ */
+import { CreateProfilePayload, UpdateProfilePayload, UserProfile } from '../types/profile';
+
+export const profileApi = {
+  getMyProfile: (): Promise<UserProfile> => {
+    return api.get<UserProfile>('/profile/me');
+  },
+
+  createProfile: (data: CreateProfilePayload): Promise<UserProfile> => {
+    return api.post<UserProfile>('/profile', data);
+  },
+
+  updateProfile: (data: UpdateProfilePayload): Promise<UserProfile> => {
+    return api.put<UserProfile>('/profile', data);
+  },
+};
+

@@ -43,13 +43,13 @@ async def clean_db_tables():
     """Ensures each test starts with a clean database state."""
     async with TestAsyncSessionLocal() as session:
         await session.execute(
-            text("TRUNCATE TABLE email_verification_otps, users CASCADE;")
+            text("TRUNCATE TABLE user_profiles, email_verification_otps, users CASCADE;")
         )
         await session.commit()
     yield
     async with TestAsyncSessionLocal() as session:
         await session.execute(
-            text("TRUNCATE TABLE email_verification_otps, users CASCADE;")
+            text("TRUNCATE TABLE user_profiles, email_verification_otps, users CASCADE;")
         )
         await session.commit()
 

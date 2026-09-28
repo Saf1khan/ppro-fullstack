@@ -191,3 +191,34 @@ stateDiagram-v2
 - **OTP Verification Screen:** Prominently displays the recipient email, provides a styled 6-digit numeric input with monospace typography, and includes an active 30-second countdown timer for resending codes.
 - **Login Screen:** Provides fast authentication, detects unverified accounts (HTTP 403), and provides an instant one-tap shortcut to the email verification screen with the email prefilled.
 - **Protected Home Landing:** Confirms verified session, displays user email and ID, and provides a clear logout mechanism.
+
+---
+
+## 9. First-Login Profile Architecture (Phase 4)
+
+### 9.1 Data Model & Entity Relationship
+
+```mermaid
+erDiagram
+    USERS ||--o| USER_PROFILES : "has one (1-to-1)"
+    USER_PROFILES {
+        UUID id PK
+        UUID user_id FK, UK
+        string full_name
+        string phone_number
+        text address
+        string business_name "nullable"
+        timestamp created_at
+        timestamp updated_at
+    }
+```
+
+### 9.2 Key Design & Architectural Decisions
+
+| Decision | Selection | Rationale (Assignment-Mandated Justification) |
+| :--- | :--- | :--- |
+| **Business Name: Optional** | `Optional[str] = None` | **Why Optional:** PadosiPro serves both registered home-service agencies and independent, solo lifestyle managers/handymen. Forcing solo professionals to enter an artificial business name creates unnecessary onboarding friction and falsified data. Leaving it optional accommodates individual professionals while allowing formal agencies to brand themselves. |
+| **Phone Number Validation** | Indian format: `+91` with 10 digits starting with `6–9` | Matches the Indian operational focus (`+91`). Accepts common variations (`9876543210`, `+91 98765 43210`, `+91-98765-43210`) and normalizes strictly to E.164 `+91XXXXXXXXXX`. |
+| **"Shown Once" Enforcement** | Server-backed `has_profile` + Route Guard | The user model evaluates profile existence. The mobile `NavigationGuard` detects `has_profile === false` and routes immediately to `/(onboarding)/profile`. Once saved, the session refreshes, and returning users bypass onboarding directly to the application dashboard. |
+| **1-to-1 Constraint** | Unique index on `user_profiles.user_id` | Database-level unique constraint prevents duplicate profile creation attempts (`HTTP 409 Conflict`). Updates are routed through `PUT /api/v1/profile`. |
+

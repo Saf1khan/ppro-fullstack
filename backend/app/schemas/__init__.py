@@ -8,6 +8,11 @@ from app.schemas.auth import (
     UserResponse,
     AuthMessageResponse,
 )
+from app.schemas.profile import (
+    ProfileCreateRequest,
+    ProfileUpdateRequest,
+    ProfileResponse,
+)
 
 __all__ = [
     "HealthResponse",
@@ -18,4 +23,7 @@ __all__ = [
     "TokenResponse",
     "UserResponse",
     "AuthMessageResponse",
+    "ProfileCreateRequest",
+    "ProfileUpdateRequest",
+    "ProfileResponse",
 ]

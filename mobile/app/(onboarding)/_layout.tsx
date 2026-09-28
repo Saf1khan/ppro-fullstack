@@ -2,10 +2,6 @@ import React from 'react';
 import { Stack } from 'expo-router';
 import { theme } from '../../src/theme';
 
-/**
- * Onboarding Flow Route Group Layout.
- * Screens (first-login profile, task-selection, confirmation) will be mounted here in Phase 3.
- */
 export default function OnboardingLayout() {
   return (
     <Stack
@@ -14,10 +10,21 @@ export default function OnboardingLayout() {
           backgroundColor: theme.colors.surface,
         },
         headerTintColor: theme.colors.primary,
+        headerTitleStyle: {
+          fontWeight: theme.typography.fontWeight.bold,
+          color: theme.colors.textPrimary,
+        },
         contentStyle: {
           backgroundColor: theme.colors.background,
         },
       }}
-    />
+    >
+      <Stack.Screen
+        name="profile"
+        options={{
+          headerShown: false,
+        }}
+      />
+    </Stack>
   );
 }
