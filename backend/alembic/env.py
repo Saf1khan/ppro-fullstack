@@ -18,6 +18,7 @@ if config.config_file_name is not None:
 
 from app.core.config import settings
 from app.db.base import Base
+import app.models  # noqa: F401 - Register models with Base.metadata
 
 # add your model's MetaData object here
 # for 'autogenerate' support

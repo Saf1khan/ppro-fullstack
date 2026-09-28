@@ -1,10 +1,13 @@
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.routes import api_router
 from app.core.config import settings
+from app.db.session import get_db
 from app.schemas.health import HealthResponse
 
 
@@ -41,11 +44,20 @@ def create_application() -> FastAPI:
         tags=["Health"],
         summary="Service Health Status",
     )
-    async def root_health() -> HealthResponse:
+    async def root_health(
+        session: AsyncSession = Depends(get_db),
+    ) -> HealthResponse:
+        db_status = "connected"
+        try:
+            await session.execute(text("SELECT 1"))
+        except Exception:
+            db_status = "disconnected"
+
         return HealthResponse(
             status="ok",
             environment=settings.ENVIRONMENT,
             version="0.1.0",
+            database=db_status,
         )
 
     # Root info
