@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "PadosiPro",
+    "slug": "padosipro-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "padosipro",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#FAFAF7"
+    },
+    "android": {
+      "package": "com.padosipro.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#155C49"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

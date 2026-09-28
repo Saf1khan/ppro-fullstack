@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: padosipro_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-padosipro}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-padosipro_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-padosipro_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-padosipro} -d ${POSTGRES_DB:-padosipro_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: padosipro_mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # SMTP port
+      - "8025:8025"  # Web UI port
+    environment:
+      MP_MAX_MESSAGES: 5000
+      MP_DATA_FILE: ""
+
+volumes:
+  postgres_data:
+    driver: local
