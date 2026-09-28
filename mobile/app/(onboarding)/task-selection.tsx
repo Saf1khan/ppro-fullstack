@@ -452,6 +452,7 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     minWidth: 140,
+    width: 'auto',
   },
   emptyTitle: {
     fontSize: theme.typography.fontSize.subheading,
@@ -467,6 +468,7 @@ const styles = StyleSheet.create({
   },
   clearButton: {
     minWidth: 140,
+    width: 'auto',
   },
   bottomBar: {
     position: 'absolute',
@@ -481,6 +483,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: theme.spacing.md,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
@@ -489,10 +492,12 @@ const styles = StyleSheet.create({
   },
   bottomInfo: {
     flex: 1,
+    marginRight: theme.spacing.md,
   },
   selectedCountLabel: {
     fontSize: theme.typography.fontSize.caption,
     color: theme.colors.textSecondary,
+    marginBottom: 2,
   },
   selectedCountValue: {
     fontSize: theme.typography.fontSize.body,
@@ -500,6 +505,9 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
   },
   reviewButton: {
+    width: 'auto',
+    flexShrink: 0,
     minWidth: 160,
+    paddingHorizontal: theme.spacing.xl,
   },
 });
