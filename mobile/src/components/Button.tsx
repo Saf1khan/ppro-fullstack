@@ -1,12 +1,12 @@
 import React from 'react';
 import {
-  TouchableOpacity,
-  Text,
   ActivityIndicator,
   StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
   TouchableOpacityProps,
   ViewStyle,
-  TextStyle,
 } from 'react-native';
 import { theme } from '../theme';
 
@@ -28,11 +28,12 @@ export const Button: React.FC<ButtonProps> = ({
 }) => {
   const isDisabled = disabled || loading;
 
-  const containerStyles: ViewStyle[] = [
+  const containerStyles: (ViewStyle | false | undefined)[] = [
     styles.base,
     styles[variant],
     styles[`size_${size}`],
-    isDisabled ? styles.disabled : {},
+    isDisabled && variant === 'primary' && styles.primaryDisabled,
+    isDisabled && variant !== 'primary' && styles.disabledGeneral,
     style as ViewStyle,
   ];
 
@@ -46,7 +47,9 @@ export const Button: React.FC<ButtonProps> = ({
     <TouchableOpacity
       activeOpacity={0.8}
       disabled={isDisabled}
-      style={containerStyles}
+      style={containerStyles as ViewStyle[]}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
       {...rest}
     >
       {loading ? (
@@ -63,13 +66,17 @@ export const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: theme.radius.lg,
+    borderRadius: theme.radius.lg, // 12px
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    width: '100%',
   },
   primary: {
     backgroundColor: theme.colors.primary,
+  },
+  primaryDisabled: {
+    backgroundColor: theme.colors.primaryDisabled,
   },
   secondary: {
     backgroundColor: theme.colors.primaryLight,
@@ -82,26 +89,27 @@ const styles = StyleSheet.create({
   ghost: {
     backgroundColor: 'transparent',
   },
+  disabledGeneral: {
+    opacity: 0.5,
+  },
   size_sm: {
     paddingVertical: theme.spacing.sm,
     paddingHorizontal: theme.spacing.md,
-    minHeight: 36,
+    minHeight: 40,
   },
   size_md: {
     paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
-    minHeight: 48,
+    paddingHorizontal: theme.spacing['2xl'],
+    minHeight: 56, // ~56px height specification
   },
   size_lg: {
     paddingVertical: theme.spacing.lg,
     paddingHorizontal: theme.spacing['2xl'],
-    minHeight: 56,
-  },
-  disabled: {
-    opacity: 0.5,
+    minHeight: 60,
   },
   textBase: {
     fontWeight: theme.typography.fontWeight.semiBold,
+    textAlign: 'center',
   },
   primaryText: {
     color: theme.colors.textInverse,
@@ -123,7 +131,7 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.sm,
   },
   text_size_md: {
-    fontSize: theme.typography.fontSize.body,
+    fontSize: theme.typography.fontSize.body, // 16px
   },
   text_size_lg: {
     fontSize: theme.typography.fontSize.subheading,

@@ -2,10 +2,6 @@ import React from 'react';
 import { Stack } from 'expo-router';
 import { theme } from '../../src/theme';
 
-/**
- * Main Application Route Group Layout.
- * Screens (home showing selected tasks, profile view, logout) will be mounted here in Phase 4.
- */
 export default function AppLayout() {
   return (
     <Stack
@@ -14,10 +10,22 @@ export default function AppLayout() {
           backgroundColor: theme.colors.surface,
         },
         headerTintColor: theme.colors.primary,
+        headerTitleStyle: {
+          fontWeight: theme.typography.fontWeight.bold,
+          color: theme.colors.textPrimary,
+        },
         contentStyle: {
           backgroundColor: theme.colors.background,
         },
       }}
-    />
+    >
+      <Stack.Screen
+        name="index"
+        options={{
+          headerShown: false,
+          title: 'Home',
+        }}
+      />
+    </Stack>
   );
 }

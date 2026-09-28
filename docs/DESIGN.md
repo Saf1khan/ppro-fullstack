@@ -87,3 +87,107 @@ A base unit of `4px` with standard multiples:
 - **Form Inputs:** Bordered with `#E4E7EC`, white background (`#FFFFFF`), text `#101828`, placeholder `#667085`, `12px` radius.
 - **Cards & Surfaces:** Off-white page background (`#FAFAF7`) with white card surfaces (`#FFFFFF`) bounded by a subtle `1px` border (`#E4E7EC`) or light shadow.
 - **Status States:** Every interactive flow must clearly indicate loading (spinners/skeletons), empty lists (helpful guidance and illustrations), and error feedback (clear inline error text or toast notifications).
+
+---
+
+## 7. Backend Authentication Architecture (Phase 2)
+
+### 7.1 Architecture & Security Decisions
+
+| Decision | Selection | Rationale (Interview-Friendly) |
+| :--- | :--- | :--- |
+| **Password Hashing** | **Argon2id** (`argon2-cffi`) | Winner of the Password Hashing Competition (PHC). Provides superior resistance against GPU/ASIC-based attacks compared to standard legacy hashing algorithms. |
+| **OTP Generation** | `secrets.randbelow(900000) + 100000` | Cryptographically secure pseudo-random number generator (CSPRNG) from the OS entropy source. Guarantees uniform distribution across `100000`–`999999`. |
+| **OTP Storage** | **HMAC-SHA256 with Server Salt** | Since a 6-digit number has only $10^6$ combinations, unsalted hashes can be reverse-looked-up in seconds via rainbow tables. A secret server-side key HMAC prevents offline enumeration attacks if database tables are leaked. |
+| **OTP Comparison** | `hmac.compare_digest` | Constant-time string comparison protects against remote timing side-channel attacks. |
+| **Token Authentication** | **Stateless JWT (HS256)** | Scalable, standard bearer authentication token with expiration (`exp`), subject UUID (`sub`), and issued-at (`iat`) metadata. |
+| **Email Relay** | **Mailpit SMTP & Web Inspector** | Local development SMTP server running in Docker, allowing real inspection of email formatting and OTP codes without third-party email deliverability dependencies. |
+
+### 7.2 Database Entity Relationships
+
+```mermaid
+erDiagram
+    USERS ||--o{ EMAIL_VERIFICATION_OTPS : "has many"
+    USERS {
+        UUID id PK
+        string email UK
+        string password_hash
+        boolean is_email_verified
+        timestamp created_at
+        timestamp updated_at
+    }
+    EMAIL_VERIFICATION_OTPS {
+        UUID id PK
+        UUID user_id FK
+        string otp_hash
+        timestamp expires_at
+        boolean is_consumed
+        integer attempts_count
+        timestamp last_sent_at
+        timestamp created_at
+    }
+```
+
+### 7.3 OTP Lifecycle & State Machine
+
+1. **Registration / Resend Trigger:**
+   - Pre-existing active OTPs for the user are invalidated (`is_consumed = True`).
+   - A new 6-digit random code is generated.
+   - The code is hashed using HMAC-SHA256 with the secret salt.
+   - `last_sent_at` and `expires_at` (10 minutes) are recorded.
+   - The plain code is dispatched via Mailpit SMTP; the plain code is **never persisted**.
+2. **Resend Cooldown Guard:**
+   - A ~30-second cooldown is verified against `last_sent_at`. If requested within 30 seconds, HTTP 429 is returned with the remaining seconds.
+3. **Verification Attempt:**
+   - The active unconsumed record is fetched.
+   - If `now > expires_at`: rejected with HTTP 400 (code expired).
+   - If `attempts_count >= 5`: code is marked consumed and rejected with HTTP 400 (attempt limit reached).
+   - If hash matches: `is_consumed = True` and user `is_email_verified = True`.
+   - If hash mismatches: `attempts_count` is incremented. If count hits 5, the code is permanently invalidated.
+
+### 7.4 JWT Authentication Flow
+
+1. User submits `email` and `password` to `POST /api/v1/auth/login`.
+2. Password is verified against the stored Argon2id hash using constant-time verification.
+3. Email verification flag (`is_email_verified`) is checked. Unverified accounts receive **HTTP 403 Forbidden**.
+4. A signed JWT bearer token containing `sub: <user_id>` is issued with a 24-hour expiration window.
+5. Client submits token via `Authorization: Bearer <token>` to access protected endpoints (e.g., `GET /api/v1/auth/me`).
+
+---
+
+## 8. Mobile Authentication Architecture (Phase 3)
+
+### 8.1 Technology & Security Decisions
+
+| Decision | Selection | Rationale |
+| :--- | :--- | :--- |
+| **Token Storage** | `expo-secure-store` | Hardware-backed keystore (Android Keystore / iOS Keychain). Prevents XSS / file-system extraction of JWT bearer tokens (AsyncStorage is strictly avoided). |
+| **State Management** | Native React Context (`AuthContext`) | Clean, zero-boilerplate session state without heavy external dependencies. Easily mockable and explainable in interviews. |
+| **Route Protection** | Expo Router `NavigationGuard` | Evaluates auth state and active route segments. Renders a neutral splash during token verification to eliminate protected screen flashing. |
+| **Network Configuration** | Dynamic `API_BASE_URL` | Seamlessly selects `10.0.2.2` for Android Emulator, `localhost` for iOS simulator, or `EXPO_PUBLIC_API_URL` for physical devices over Wi-Fi. |
+
+### 8.2 Client State Machine
+
+```mermaid
+stateDiagram-v2
+    [*] --> Initializing: App Mounts
+    Initializing --> Authenticated: Valid JWT in SecureStore & /me succeeds
+    Initializing --> Unauthenticated: No Token or /me 401
+    
+    Unauthenticated --> Registering: User clicks Sign Up
+    Registering --> VerifyingEmail: Registration 201 (OTP Sent)
+    VerifyingEmail --> LoggingIn: Verification 200 (OTP Verified)
+    
+    Unauthenticated --> LoggingIn: User enters credentials
+    LoggingIn --> VerifyingEmail: Login 403 (Unverified Email)
+    LoggingIn --> Authenticated: Login 200 (JWT Received & Saved)
+    
+    Authenticated --> Unauthenticated: User Clicks Log Out (Token Cleared)
+```
+
+### 8.3 Screen Design & UX Principles
+
+- **Registration Screen:** Form inputs designed with 56px height, soft 12px border radius, clear labels, and password toggles. Validates passwords before submission and displays actionable backend error alerts.
+- **OTP Verification Screen:** Prominently displays the recipient email, provides a styled 6-digit numeric input with monospace typography, and includes an active 30-second countdown timer for resending codes.
+- **Login Screen:** Provides fast authentication, detects unverified accounts (HTTP 403), and provides an instant one-tap shortcut to the email verification screen with the email prefilled.
+- **Protected Home Landing:** Confirms verified session, displays user email and ID, and provides a clear logout mechanism.

@@ -7,6 +7,7 @@ export const colors = {
   primary: '#155C49',
   primaryHover: '#104738',
   primaryLight: '#E8F2EE',
+  primaryDisabled: '#93B2A9',
 
   // Text
   textPrimary: '#101828',
