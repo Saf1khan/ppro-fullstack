@@ -297,4 +297,35 @@ sequenceDiagram
     API-->>App: Render selected services directly on Home Dashboard
 ```
 
+---
+
+## 11. Engineering Trade-offs, Scope Boundaries & Next Steps
+
+### 11.1 Key Architectural Trade-offs
+
+| Trade-off Area | Chosen Approach | Alternative Considered | Rationale |
+| :--- | :--- | :--- | :--- |
+| **State Management** | **React Context + Hooks** (`AuthContext`) | Redux Toolkit / Zustand | React Context requires zero third-party dependencies, keeps the bundle lightweight, eliminates state-synchronization bugs across Expo Router route segments, and is immediately explainable in an interview walkthrough. |
+| **Token Storage** | **`expo-secure-store`** (Hardware Keystore) | `AsyncStorage` | `AsyncStorage` stores credentials in plaintext SQLite or XML on device disk, vulnerable on rooted devices. `expo-secure-store` leverages hardware-backed Android Keystore / iOS Keychain. |
+| **Email Relay** | **Mailpit SMTP & Web Inspector** | Live SendGrid / Resend API | Mailpit runs locally inside Docker with zero external API keys, eliminates deliverability/spam failures during local evaluation, and enables reviewers to verify OTPs in under 15 minutes. |
+| **Catalogue Seeding** | **Automatic Idempotent Seed on First Query** | External manual CLI script | Running `seed_catalogue_if_empty()` on API startup or query ensures the database is always populated with 24 tasks across 4 categories without requiring reviewers to remember extra commands. |
+| **Business Name** | **Optional** (`Optional[str] = None`) | Mandatory input | Accommodates both solo independent lifestyle managers and registered home-service agencies without forcing fake company names. |
+
+### 11.2 What We Left Out (Intentional Scope Boundaries)
+
+In strict adherence to the assignment brief (*"A smaller scope done properly beats every feature done halfway"*), the following were intentionally excluded:
+1. **Third-Party SMS/WhatsApp Gateways:** The brief explicitly mandated Email OTP. Adding Twilio or Fast2SMS introduces external billing and third-party downtime without improving the evaluation criteria.
+2. **Payment Processing & Escrow Checkout:** Razorpay/Stripe was left out because the required journey concludes upon task confirmation and home dashboard rendering.
+3. **Real-Time WebSockets:** Task selection is fundamentally CRUD-driven; polling or refetching on screen focus is simpler, more reliable, and avoids socket connection leaks on mobile.
+4. **Complex Multi-Role Portals:** Admin consoles and dispatcher interfaces were excluded to keep the code focused 100% on the provider/customer onboarding journey.
+
+### 11.3 What We Would Build Next (With Another Week)
+
+1. **Token Refresh Rotation:** Implement short-lived access tokens (15 minutes) with rotating refresh tokens stored in SecureStore and server-side revocation lists.
+2. **Offline-First SQLite Sync:** Integrate `expo-sqlite` or WatermelonDB to cache the service catalogue offline, queueing task selections locally if network is temporarily lost.
+3. **Location & Geofencing:** Integrate `expo-location` and Google Places API to auto-fill address PIN codes and match service providers with nearby household leads.
+4. **Push Notifications:** Configure Expo Push Notifications or Firebase Cloud Messaging (FCM) to alert providers when neighborhood clients book their selected services.
+5. **Photo Avatar & Verification Documents Upload:** Add presigned S3/MinIO upload URLs for government ID (Aadhaar/PAN) and profile avatar pictures.
+
+
 

@@ -185,40 +185,107 @@ docker compose ps
    - **Android Emulator:** Press `a` in the Expo terminal.
    - **Physical Android Device:** Scan the QR code using the **Expo Go** application.
 
+### Step 5: How to Build the Android APK
+
+Per the assignment brief (*"an APK for Android, and/or an IPA or TestFlight link for iOS. Android alone is completely fine"*), the repository includes full configuration to build a standalone Android `.apk` file.
+
+#### Method A: Cloud APK Build with EAS (Recommended & Easiest)
+1. Install the EAS CLI globally (or run via npx):
+   ```bash
+   npm install -g eas-cli
+   ```
+2. Navigate to the `mobile/` directory:
+   ```bash
+   cd mobile
+   ```
+3. Run the APK build command using the pre-configured `preview` profile:
+   ```bash
+   eas build -p android --profile preview
+   ```
+   *(EAS will compile the standalone `.apk` in the cloud and provide a direct download URL that can be installed on any physical Android device or emulator.)*
+
+#### Method B: Local Standalone Build (Expo Prebuild / Gradle)
+If you have Android Studio & Android SDK installed locally:
+1. Generate the native Android project folder:
+   ```bash
+   cd mobile
+   npx expo prebuild -p android
+   ```
+2. Compile the release APK locally with Gradle:
+   ```bash
+   cd android
+   ./gradlew assembleRelease
+   ```
+   The built APK will be located at:
+   `android/app/build/outputs/apk/release/app-release.apk`
+
 ---
 
-## 5. Mobile Authentication Flow (Phase 3)
+## 5. End-to-End User Journey (Implemented & Verified)
 
-The native mobile app implements the full client-side authentication journey:
-
-1. **Session Bootstrap:** On app mount, `AuthContext` checks `expo-secure-store` for an existing JWT. If present, it validates the token against `GET /api/v1/auth/me`. If valid, it enters the authenticated area without flashing unauthenticated screens; if invalid/expired, it clears the token and lands on Login.
-2. **Registration Screen:** Collects email, password, and confirm password. Enforces client-side email format and password match before dispatching to `POST /api/v1/auth/register`. Displays inline server errors (e.g. 409 Conflict). On success, seamlessly forwards to Verify Email.
-3. **Verify Email Screen:** Displays the target email, provides a 6-digit numeric input with monospace typography, and calls `POST /api/v1/auth/verify-email`. Features an active 30-second countdown timer for the "Resend Code" button to respect backend rate limits, handles remaining attempt countdowns, and routes to Login on confirmation.
-4. **Login Screen:** Authenticates email and password via `POST /api/v1/auth/login`. Handles `401 Unauthorized` (bad credentials) and `403 Forbidden` (unverified account) with a direct "Verify Email Now" quick action. Stores the issued JWT in `expo-secure-store`.
-5. **Route Protection:** Expo Router `NavigationGuard` prevents unauthenticated access to `(app)` and redirects authenticated users away from `(auth)` screens.
-6. **Protected Landing Screen:** Displays verified session metadata (email, verification status, user ID) and provides a secure "Log Out" action that clears SecureStore tokens and resets auth context state.
+1. **User Registration:** Email, password, and confirmation password validation with inline client-side checks and server-side Argon2id hashing.
+2. **Email Verification:** Cryptographically secure 6-digit OTP dispatched to local Mailpit, with 10-minute expiry, single-use enforcement, 5-attempt limit, and 30-second resend cooldown.
+3. **Authentication & Session:** JWT bearer token issued and stored in hardware-backed `expo-secure-store`.
+4. **First-Login Profile Setup (Shown Once):** Captures Full Name, Indian Mobile (`+91` 10 digits), Service Area Address, and optional Business Name. Un-profiled users are routed here directly; returning users with profiles bypass onboarding straight to dashboard.
+5. **Task Catalogue & Selection:**
+   - 24 tasks across 4 categories (*Deep Cleaning, Plumbing, Electrical, Appliances*).
+   - Real-time instant search across titles and descriptions.
+   - Horizontal category filter chips.
+   - Multi-select interactive checkbox cards.
+6. **Task Confirmation Step:** Grouped review screen displaying chosen services before saving.
+7. **Home Dashboard:** Displays active provider details, verified badge, and the complete list of selected tasks with an "Edit Services" shortcut and secure Logout.
 
 ---
 
-## 6. Authentication API Overview (Backend)
+## 6. Complete REST API Reference (Backend)
 
 | Method | Endpoint | Description | Auth Required |
 | :--- | :--- | :--- | :---: |
+| **Health** | | | |
 | `GET` | `/health` | Service and database connectivity health probe | No |
 | `GET` | `/api/v1/health` | Versioned health check | No |
+| **Authentication** | | | |
 | `POST` | `/api/v1/auth/register` | Register an unverified account & dispatch 6-digit OTP | No |
 | `POST` | `/api/v1/auth/verify-email` | Verify email with OTP (10 min expiry, 5 attempt limit) | No |
 | `POST` | `/api/v1/auth/resend-otp` | Request a new OTP (enforces 30s cooldown) | No |
 | `POST` | `/api/v1/auth/login` | Authenticate credentials & issue JWT token | No |
-| `GET` | `/api/v1/auth/me` | Fetch authenticated user profile & verification status | Bearer JWT |
+| `GET` | `/api/v1/auth/me` | Fetch authenticated user status & `has_profile` flag | Bearer JWT |
+| **Profile** | | | |
+| `GET` | `/api/v1/profile/me` | Fetch current user's profile details | Bearer JWT |
+| `POST` | `/api/v1/profile` | Create profile (Name, Indian phone +91, Address, Business) | Bearer JWT |
+| `PUT` | `/api/v1/profile` | Update profile details | Bearer JWT |
+| **Tasks** | | | |
+| `GET` | `/api/v1/tasks/categories` | Get catalogue of 24 tasks grouped by 4 categories | No |
+| `GET` | `/api/v1/tasks` | Live search tasks by query string (`?search=...`) | No |
+| `POST` | `/api/v1/tasks/select` | Persist selected task IDs for authenticated user | Bearer JWT |
+| `GET` | `/api/v1/tasks/my-selection` | Retrieve user's currently confirmed tasks | Bearer JWT |
 
 ---
 
-## 7. Project Status & Roadmap
+## 7. Automated Test Suite (35/35 Passing)
 
-| Phase | Milestone | Status | Details |
+All risky logic, auth constraints, profile validation, catalogue counts, and user task isolation are covered with 100% passing tests:
+
+```bash
+cd backend
+.venv\Scripts\pytest.exe -v
+```
+
+* **18 Authentication Tests:** Argon2id hashing, OTP attempt exhaustion, 10-minute expiration, 30s cooldown, unverified user login block, token issuance.
+* **2 Health Tests:** Root and API v1 health checks.
+* **8 Profile Tests:** Indian phone normalization, 422 invalid phone rejection, 1-to-1 duplicate creation conflict, optional business name, PUT update.
+* **7 Task Tests:** Minimum 20 tasks / 4 categories check, query search filtering, 401 auth guard, selection persistence, invalid task ID rejection, user isolation.
+
+---
+
+## 8. Project Status & Completed Milestones
+
+| Phase | Milestone | Status | Key Deliverables |
 | :---: | :--- | :---: | :--- |
-| **Phase 1** | Foundation & Infrastructure | ✅ Completed | Clean multi-package architecture, Docker PostgreSQL & Mailpit, design system tokens |
-| **Phase 2** | Backend Authentication & DB | ✅ Completed | Argon2id, 6-digit OTP lifecycle, JWT bearer tokens, Alembic migrations, 20/20 Pytest passing |
-| **Phase 3** | Mobile Authentication Flow | ✅ Completed | Expo Router auth screens (Register, OTP, Login), AuthContext, SecureStore JWT persistence, Route Guard |
-| **Phase 4** | Onboarding & Task Selection | ⏳ Next | First-login profile setup (Name, Phone, Address, Business) & Categorized task selection flow |
+| **Phase 1** | Foundation & Architecture | ✅ Completed | FastAPI, Alembic, Docker Compose (PostgreSQL 16 & Mailpit), design tokens |
+| **Phase 2** | Backend Authentication & Security | ✅ Completed | Argon2id, 6-digit OTP lifecycle, JWT bearer tokens, 20/20 tests passing |
+| **Phase 3** | Mobile Native Authentication | ✅ Completed | Register, OTP timer, Login, SecureStore JWT persistence, Route Guard |
+| **Phase 4** | First-Login Profile Onboarding | ✅ Completed | 1-to-1 UserProfile model, Indian phone validation, optional business name, 28/28 tests |
+| **Phase 5** | Task Catalogue & Selection Flow | ✅ Completed | 24 tasks / 4 categories, search, multi-select, confirm step, Home dashboard tasks list, 35/35 tests |
+| **Part C** | Deliverables & Quality | ✅ Completed | APK build config (`eas.json`), comprehensive `README.md`, 1-page `DESIGN.md` |
+
