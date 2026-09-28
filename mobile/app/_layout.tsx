@@ -18,8 +18,10 @@ function NavigationGuard() {
     const inProtectedGroup = segments[0] === '(app)';
     const inOnboardingGroup = segments[0] === '(onboarding)';
 
-    if (status === 'unauthenticated' && (inProtectedGroup || inOnboardingGroup)) {
-      router.replace('/(auth)/login');
+    if (status === 'unauthenticated') {
+      if (!inAuthGroup) {
+        router.replace('/(auth)/login');
+      }
     } else if (status === 'authenticated') {
       if (user && user.has_profile === false) {
         // Needs first-login profile onboarding
@@ -29,7 +31,7 @@ function NavigationGuard() {
       } else if (user && user.has_profile === true) {
         // Already has completed profile
         const segs = segments as string[];
-        if (inAuthGroup || (inOnboardingGroup && segs[1] === 'profile')) {
+        if (inAuthGroup || (inOnboardingGroup && segs[1] === 'profile') || segs.length === 0) {
           router.replace('/(app)');
         }
       }
