@@ -13,6 +13,12 @@ function resolveApiBaseUrl(): string {
     return process.env.EXPO_PUBLIC_API_URL.replace(/\/+$/, '');
   }
 
+  // When running in a web browser (desktop or mobile phone browser)
+  if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.hostname) {
+    const hostname = window.location.hostname;
+    return `http://${hostname}:8000/api/v1`;
+  }
+
   // Automatic host detection for physical phones connected via Expo Go
   const hostUri = Constants.expoConfig?.hostUri;
   if (hostUri) {
