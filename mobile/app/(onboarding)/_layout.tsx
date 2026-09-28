@@ -25,6 +25,18 @@ export default function OnboardingLayout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="task-selection"
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="task-confirmation"
+        options={{
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }

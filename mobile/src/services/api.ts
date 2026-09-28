@@ -178,3 +178,28 @@ export const profileApi = {
   },
 };
 
+/**
+ * Tasks Catalogue & Selection API Service (Phase 5)
+ */
+import { CategoryWithTasks, SelectedTasksResponse, Task } from '../types/task';
+
+export const tasksApi = {
+  getCategories: (): Promise<CategoryWithTasks[]> => {
+    return api.get<CategoryWithTasks[]>('/tasks/categories');
+  },
+
+  searchTasks: (query?: string): Promise<Task[]> => {
+    const endpoint = query && query.trim() ? `/tasks?search=${encodeURIComponent(query.trim())}` : '/tasks';
+    return api.get<Task[]>(endpoint);
+  },
+
+  selectTasks: (taskIds: string[]): Promise<SelectedTasksResponse> => {
+    return api.post<SelectedTasksResponse>('/tasks/select', { task_ids: taskIds });
+  },
+
+  getMySelectedTasks: (): Promise<SelectedTasksResponse> => {
+    return api.get<SelectedTasksResponse>('/tasks/my-selection');
+  },
+};
+
+

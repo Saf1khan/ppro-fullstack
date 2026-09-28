@@ -72,8 +72,8 @@ export default function ProfileOnboardingScreen() {
       // Update session state so has_profile is now true
       await refreshUser();
 
-      // Transition to next onboarding step or home dashboard
-      router.replace('/(app)');
+      // Transition to next onboarding step: Task Selection
+      router.replace('/(onboarding)/task-selection');
     } catch (err) {
       setApiError(formatApiErrorMessage(err));
     } finally {

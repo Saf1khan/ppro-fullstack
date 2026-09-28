@@ -222,3 +222,79 @@ erDiagram
 | **"Shown Once" Enforcement** | Server-backed `has_profile` + Route Guard | The user model evaluates profile existence. The mobile `NavigationGuard` detects `has_profile === false` and routes immediately to `/(onboarding)/profile`. Once saved, the session refreshes, and returning users bypass onboarding directly to the application dashboard. |
 | **1-to-1 Constraint** | Unique index on `user_profiles.user_id` | Database-level unique constraint prevents duplicate profile creation attempts (`HTTP 409 Conflict`). Updates are routed through `PUT /api/v1/profile`. |
 
+---
+
+## 10. Task Catalogue & Multi-Selection Architecture (Phase 5)
+
+### 10.1 Data Model & Entity Relationship
+
+```mermaid
+erDiagram
+    TASK_CATEGORIES ||--o{ TASKS : "contains"
+    TASKS ||--o{ USER_TASK_SELECTIONS : "selected by"
+    USERS ||--o{ USER_TASK_SELECTIONS : "selects"
+    
+    TASK_CATEGORIES {
+        UUID id PK
+        string name UK
+        string slug UK
+        string icon_name
+        integer display_order
+        timestamp created_at
+    }
+    
+    TASKS {
+        UUID id PK
+        UUID category_id FK
+        string name
+        text short_description
+        integer display_order
+        timestamp created_at
+    }
+    
+    USER_TASK_SELECTIONS {
+        UUID id PK
+        UUID user_id FK
+        UUID task_id FK
+        timestamp created_at
+    }
+```
+
+### 10.2 Catalogue Seeding & Coverage
+
+The backend automatically seeds **24 authentic tasks across 4 realistic household categories** modeled on `app.padosipro.com`:
+1. **Deep Cleaning & Sanitization (6 tasks):** Kitchen degreasing, bathroom grout & acid wash, move-in sanitization, upholstery shampoo, balcony mesh wash, post-renovation cleanup.
+2. **Plumbing & Drainage (6 tasks):** Drain jetting, tap/mixer overhaul, overhead tank disinfection, acoustic pipe leak detection, commode cistern repair, water purifier routing.
+3. **Electrical & Wiring (6 tasks):** Ceiling fan calibration, DB/MCB breaker tripping fix, LED chandelier setup, smart switch module install, inverter line setup, AC socket rewiring.
+4. **Appliance Maintenance & Repair (6 tasks):** Split AC foam jetting, microwave magnetron check, washing machine spin repair, refrigerator de-icing, RO membrane replacement, geyser descaling.
+
+### 10.3 Selection & Confirmation Workflow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Service Provider
+    participant App as Mobile App
+    participant API as FastAPI Backend
+    participant DB as PostgreSQL
+
+    User->>App: Opens Task Selection Screen
+    App->>API: GET /api/v1/tasks/categories & GET /api/v1/tasks/my-selection
+    API->>DB: Query categories, tasks, prior selections
+    DB-->>API: Return catalogue data
+    API-->>App: Categories with nested tasks
+    User->>App: Filters by category chips or live search input
+    User->>App: Toggles multiple task checkboxes
+    App->>App: Updates active selected count badge
+    User->>App: Clicks "Review Selection"
+    App->>App: Navigates to Task Confirmation Screen (grouped by category)
+    User->>App: Clicks "Confirm & Launch Services"
+    App->>API: POST /api/v1/tasks/select { task_ids: [...] }
+    API->>DB: Replace user_task_selections transactionally
+    API-->>App: Confirmed selection list
+    App->>App: Replaces route with /(app) Home Dashboard
+    App->>API: GET /api/v1/tasks/my-selection
+    API-->>App: Render selected services directly on Home Dashboard
+```
+
+
