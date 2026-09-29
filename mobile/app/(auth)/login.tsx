@@ -76,9 +76,7 @@ export default function LoginScreen() {
         password,
       });
 
-      // Save token in SecureStore and update AuthContext
       await login(tokenResponse.access_token);
-      // Navigation to (app) is automatically handled by the root route protection hook
     } catch (err: unknown) {
       const msg = formatApiErrorMessage(err);
       setServerError(msg);
@@ -99,87 +97,97 @@ export default function LoginScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>
-            Sign in to continue to your PadosiPro account.
-          </Text>
-        </View>
+        <View style={styles.centerContainer}>
+          <Card variant="elevated" style={styles.authCard}>
+            {/* Brand Header */}
+            <View style={styles.brandBadge}>
+              <Text style={styles.brandBadgeDot}>●</Text>
+              <Text style={styles.brandBadgeText}>PADOSIPRO PARTNER</Text>
+            </View>
 
-        {infoBanner ? (
-          <Card style={styles.infoCard}>
-            <Text style={styles.infoText}>{infoBanner}</Text>
-          </Card>
-        ) : null}
+            <View style={styles.header}>
+              <Text style={styles.title}>Welcome Back</Text>
+              <Text style={styles.subtitle}>
+                Sign in to manage your neighbourhood service requests.
+              </Text>
+            </View>
 
-        {serverError ? (
-          <Card style={styles.errorCard}>
-            <Text style={styles.errorTitle}>Sign In Failed</Text>
-            <Text style={styles.errorMessage}>{serverError}</Text>
-            {isUnverified && (
-              <Button
-                title="Verify Email Now"
-                variant="outline"
-                size="sm"
-                onPress={() =>
-                  router.push({
-                    pathname: '/(auth)/verify-email',
-                    params: { email: email.trim().toLowerCase() },
-                  })
-                }
-                style={styles.verifyRedirectButton}
+            {infoBanner ? (
+              <View style={styles.infoCard}>
+                <Text style={styles.infoText}>{infoBanner}</Text>
+              </View>
+            ) : null}
+
+            {serverError ? (
+              <View style={styles.errorCard}>
+                <Text style={styles.errorTitle}>Sign In Failed</Text>
+                <Text style={styles.errorMessage}>{serverError}</Text>
+                {isUnverified && (
+                  <Button
+                    title="Verify Email Now"
+                    variant="outline"
+                    size="sm"
+                    onPress={() =>
+                      router.push({
+                        pathname: '/(auth)/verify-email',
+                        params: { email: email.trim().toLowerCase() },
+                      })
+                    }
+                    style={styles.verifyRedirectButton}
+                  />
+                )}
+              </View>
+            ) : null}
+
+            <View style={styles.form}>
+              <Input
+                label="Email Address"
+                placeholder="you@example.com"
+                value={email}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  if (emailError) setEmailError('');
+                  if (serverError) setServerError('');
+                }}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                error={emailError}
               />
-            )}
+
+              <Input
+                label="Password"
+                placeholder="Your account password"
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  if (passwordError) setPasswordError('');
+                  if (serverError) setServerError('');
+                }}
+                isPassword
+                autoCapitalize="none"
+                error={passwordError}
+              />
+
+              <Button
+                title="Sign In"
+                onPress={handleLogin}
+                loading={loading}
+                style={styles.submitButton}
+              />
+            </View>
+
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Don't have an account? </Text>
+              <TouchableOpacity
+                onPress={() => router.replace('/(auth)/register')}
+                accessibilityRole="button"
+                accessibilityLabel="Sign up"
+              >
+                <Text style={styles.linkText}>Sign up</Text>
+              </TouchableOpacity>
+            </View>
           </Card>
-        ) : null}
-
-        <View style={styles.form}>
-          <Input
-            label="Email Address"
-            placeholder="you@example.com"
-            value={email}
-            onChangeText={(text) => {
-              setEmail(text);
-              if (emailError) setEmailError('');
-              if (serverError) setServerError('');
-            }}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            error={emailError}
-          />
-
-          <Input
-            label="Password"
-            placeholder="Your account password"
-            value={password}
-            onChangeText={(text) => {
-              setPassword(text);
-              if (passwordError) setPasswordError('');
-              if (serverError) setServerError('');
-            }}
-            isPassword
-            autoCapitalize="none"
-            error={passwordError}
-          />
-
-          <Button
-            title="Sign In"
-            onPress={handleLogin}
-            loading={loading}
-            style={styles.submitButton}
-          />
-        </View>
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Don't have an account? </Text>
-          <TouchableOpacity
-            onPress={() => router.replace('/(auth)/register')}
-            accessibilityRole="button"
-            accessibilityLabel="Sign up"
-          >
-            <Text style={styles.linkText}>Sign up</Text>
-          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -189,83 +197,124 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   keyboardContainer: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: '#FAFAF7',
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: theme.spacing['2xl'],
-    paddingTop: theme.spacing['3xl'],
-    paddingBottom: theme.spacing['4xl'],
     justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 32,
+    minHeight: '100%',
+  },
+  centerContainer: {
+    width: '100%',
+    maxWidth: 460,
+    alignSelf: 'center',
+  },
+  authCard: {
+    padding: 28,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F2F4F7',
+    ...theme.shadows.card,
+  },
+  brandBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#E8F8F2',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 9999,
+    marginBottom: 16,
+    gap: 6,
+  },
+  brandBadgeDot: {
+    fontSize: 8,
+    color: theme.colors.primary,
+  },
+  brandBadgeText: {
+    color: theme.colors.primary,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.6,
   },
   header: {
-    marginBottom: theme.spacing['2xl'],
+    marginBottom: 24,
   },
   title: {
-    fontSize: theme.typography.fontSize.h1,
-    lineHeight: theme.typography.lineHeight.h1,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.sm,
+    fontSize: 26,
+    lineHeight: 32,
+    fontWeight: '800',
+    color: '#101828',
+    marginBottom: 6,
+    letterSpacing: -0.4,
   },
   subtitle: {
-    fontSize: theme.typography.fontSize.body,
-    lineHeight: theme.typography.lineHeight.body,
-    color: theme.colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 22,
+    color: '#667085',
   },
   infoCard: {
-    backgroundColor: theme.colors.successLight,
-    borderColor: theme.colors.success,
+    backgroundColor: '#ECFDF3',
+    borderColor: '#A6F4C5',
     borderWidth: 1,
-    marginBottom: theme.spacing.xl,
-    padding: theme.spacing.lg,
+    borderRadius: 12,
+    marginBottom: 20,
+    padding: 14,
   },
   infoText: {
-    color: theme.colors.success,
-    fontSize: theme.typography.fontSize.body,
-    fontWeight: theme.typography.fontWeight.medium,
+    color: '#027A48',
+    fontSize: 14,
+    fontWeight: '500',
+    lineHeight: 20,
   },
   errorCard: {
-    backgroundColor: theme.colors.errorLight,
-    borderColor: theme.colors.error,
+    backgroundColor: '#FEF3F2',
+    borderColor: '#FECDCA',
     borderWidth: 1,
-    marginBottom: theme.spacing.xl,
-    padding: theme.spacing.lg,
+    borderRadius: 12,
+    marginBottom: 20,
+    padding: 14,
   },
   errorTitle: {
-    fontSize: theme.typography.fontSize.sm,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.error,
-    marginBottom: theme.spacing.xs,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#D92D20',
+    marginBottom: 4,
   },
   errorMessage: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.error,
-    lineHeight: theme.typography.lineHeight.sm,
+    fontSize: 13,
+    color: '#B42318',
+    lineHeight: 18,
   },
   verifyRedirectButton: {
-    marginTop: theme.spacing.md,
-    borderColor: theme.colors.error,
+    marginTop: 12,
+    borderColor: '#D92D20',
   },
   form: {
-    marginBottom: theme.spacing['2xl'],
+    marginBottom: 16,
   },
   submitButton: {
-    marginTop: theme.spacing.sm,
+    marginTop: 8,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: theme.spacing.md,
+    marginTop: 12,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F2F4F7',
   },
   footerText: {
-    fontSize: theme.typography.fontSize.body,
-    color: theme.colors.textSecondary,
+    fontSize: 14,
+    color: '#667085',
   },
   linkText: {
-    fontSize: theme.typography.fontSize.body,
+    fontSize: 14,
     color: theme.colors.primary,
-    fontWeight: theme.typography.fontWeight.bold,
+    fontWeight: '700',
   },
 });

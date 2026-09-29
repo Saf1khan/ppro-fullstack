@@ -7,7 +7,7 @@ export interface CardProps extends ViewProps {
 }
 
 export const Card: React.FC<CardProps> = ({
-  variant = 'outlined',
+  variant = 'elevated',
   style,
   children,
   ...rest
@@ -22,19 +22,18 @@ export const Card: React.FC<CardProps> = ({
 const styles = StyleSheet.create({
   base: {
     backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.lg,
+    borderRadius: theme.radius.xl, // 16px modern rounding
+    padding: theme.spacing.xl, // 20px comfortable padding
+  },
+  elevated: {
+    borderWidth: 1,
+    borderColor: '#F2F4F7',
+    ...theme.shadows.card,
   },
   outlined: {
     borderWidth: 1,
     borderColor: theme.colors.border,
-  },
-  elevated: {
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    ...theme.shadows.subtle,
   },
   flat: {
     backgroundColor: theme.colors.surface,

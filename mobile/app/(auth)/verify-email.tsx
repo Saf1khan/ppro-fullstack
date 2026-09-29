@@ -69,13 +69,12 @@ export default function VerifyEmailScreen() {
       });
 
       setSuccessMessage(response.message || 'Email verified successfully!');
-      // Brief delay so user sees success feedback, then route to Login
       setTimeout(() => {
         router.replace({
           pathname: '/(auth)/login',
           params: { email, verified: 'true' },
         });
-      }, 1200);
+      }, 1000);
     } catch (err: unknown) {
       const msg = formatApiErrorMessage(err);
       setErrorMessage(msg);
@@ -96,7 +95,6 @@ export default function VerifyEmailScreen() {
       setSuccessMessage(response.message || 'A new 6-digit code has been sent.');
       setOtp('');
 
-      // Restart 30-second cooldown
       setCooldownSeconds(30);
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = setInterval(() => {
@@ -125,88 +123,99 @@ export default function VerifyEmailScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Verify Email</Text>
-          <Text style={styles.subtitle}>
-            Enter the 6-digit verification code sent to:
-          </Text>
-          <Text style={styles.emailHighlight}>{email || 'your email'}</Text>
-        </View>
+        <View style={styles.centerContainer}>
+          <Card variant="elevated" style={styles.authCard}>
+            {/* Header Badge */}
+            <View style={styles.brandBadge}>
+              <Text style={styles.brandBadgeDot}>●</Text>
+              <Text style={styles.brandBadgeText}>EMAIL VERIFICATION</Text>
+            </View>
 
-        {successMessage ? (
-          <Card style={styles.successCard}>
-            <Text style={styles.successText}>{successMessage}</Text>
+            <View style={styles.header}>
+              <Text style={styles.title}>Check Your Inbox</Text>
+              <Text style={styles.subtitle}>
+                We sent a 6-digit verification code to
+              </Text>
+              <View style={styles.emailPill}>
+                <Text style={styles.emailHighlight}>{email || 'your email'}</Text>
+              </View>
+            </View>
+
+            {successMessage ? (
+              <View style={styles.successCard}>
+                <Text style={styles.successText}>{successMessage}</Text>
+              </View>
+            ) : null}
+
+            {errorMessage ? (
+              <View style={styles.errorCard}>
+                <Text style={styles.errorTitle}>Verification Error</Text>
+                <Text style={styles.errorMessage}>{errorMessage}</Text>
+              </View>
+            ) : null}
+
+            <View style={styles.otpContainer}>
+              <Text style={styles.inputLabel}>Enter 6-Digit Code</Text>
+              <TextInput
+                style={styles.otpInput}
+                value={otp}
+                onChangeText={(text) => {
+                  const sanitized = text.replace(/[^0-9]/g, '').slice(0, 6);
+                  setOtp(sanitized);
+                  if (errorMessage) setErrorMessage('');
+                }}
+                keyboardType="number-pad"
+                maxLength={6}
+                placeholder="000000"
+                placeholderTextColor="#D0D5DD"
+                autoFocus
+                accessibilityLabel="6-digit verification code"
+              />
+              <Text style={styles.helperText}>
+                Code expires in 10 minutes · 5 attempts max
+              </Text>
+            </View>
+
+            <Button
+              title="Verify & Continue"
+              onPress={handleVerify}
+              loading={loading}
+              disabled={otp.length !== 6 || loading}
+              style={styles.verifyButton}
+            />
+
+            <View style={styles.resendSection}>
+              <Text style={styles.resendQuestion}>Didn't receive the email? </Text>
+              <TouchableOpacity
+                onPress={handleResend}
+                disabled={cooldownSeconds > 0 || resending}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: cooldownSeconds > 0 || resending }}
+              >
+                <Text
+                  style={[
+                    styles.resendLink,
+                    cooldownSeconds > 0 && styles.resendDisabled,
+                  ]}
+                >
+                  {cooldownSeconds > 0
+                    ? `Resend in ${cooldownSeconds}s`
+                    : resending
+                    ? 'Sending...'
+                    : 'Resend code'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.backSection}>
+              <TouchableOpacity
+                onPress={() => router.replace('/(auth)/register')}
+                accessibilityRole="button"
+              >
+                <Text style={styles.backLink}>Change email address</Text>
+              </TouchableOpacity>
+            </View>
           </Card>
-        ) : null}
-
-        {errorMessage ? (
-          <Card style={styles.errorCard}>
-            <Text style={styles.errorTitle}>Verification Error</Text>
-            <Text style={styles.errorMessage}>{errorMessage}</Text>
-          </Card>
-        ) : null}
-
-        <View style={styles.otpContainer}>
-          <Text style={styles.inputLabel}>6-Digit Code</Text>
-          <TextInput
-            style={styles.otpInput}
-            value={otp}
-            onChangeText={(text) => {
-              // Only allow digits up to 6 characters
-              const sanitized = text.replace(/[^0-9]/g, '').slice(0, 6);
-              setOtp(sanitized);
-              if (errorMessage) setErrorMessage('');
-            }}
-            keyboardType="number-pad"
-            maxLength={6}
-            placeholder="••••••"
-            placeholderTextColor={theme.colors.textSecondary}
-            autoFocus
-            accessibilityLabel="6-digit verification code"
-          />
-          <Text style={styles.helperText}>
-            Code expires in 10 minutes. Maximum 5 attempts allowed.
-          </Text>
-        </View>
-
-        <Button
-          title="Verify Email"
-          onPress={handleVerify}
-          loading={loading}
-          disabled={otp.length !== 6 || loading}
-          style={styles.verifyButton}
-        />
-
-        <View style={styles.resendSection}>
-          <Text style={styles.resendQuestion}>Didn't receive the email? </Text>
-          <TouchableOpacity
-            onPress={handleResend}
-            disabled={cooldownSeconds > 0 || resending}
-            accessibilityRole="button"
-            accessibilityState={{ disabled: cooldownSeconds > 0 || resending }}
-          >
-            <Text
-              style={[
-                styles.resendLink,
-                cooldownSeconds > 0 && styles.resendDisabled,
-              ]}
-            >
-              {cooldownSeconds > 0
-                ? `Resend in ${cooldownSeconds}s`
-                : resending
-                ? 'Sending...'
-                : 'Resend code'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.backSection}>
-          <TouchableOpacity
-            onPress={() => router.replace('/(auth)/register')}
-            accessibilityRole="button"
-          >
-            <Text style={styles.backLink}>Change email address</Text>
-          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -216,123 +225,169 @@ export default function VerifyEmailScreen() {
 const styles = StyleSheet.create({
   keyboardContainer: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: '#FAFAF7',
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: theme.spacing['2xl'],
-    paddingTop: theme.spacing['3xl'],
-    paddingBottom: theme.spacing['4xl'],
     justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 32,
+    minHeight: '100%',
+  },
+  centerContainer: {
+    width: '100%',
+    maxWidth: 460,
+    alignSelf: 'center',
+  },
+  authCard: {
+    padding: 28,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F2F4F7',
+    ...theme.shadows.card,
+  },
+  brandBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#E8F8F2',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 9999,
+    marginBottom: 16,
+    gap: 6,
+  },
+  brandBadgeDot: {
+    fontSize: 8,
+    color: theme.colors.primary,
+  },
+  brandBadgeText: {
+    color: theme.colors.primary,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.6,
   },
   header: {
-    marginBottom: theme.spacing['2xl'],
+    marginBottom: 24,
   },
   title: {
-    fontSize: theme.typography.fontSize.h1,
-    lineHeight: theme.typography.lineHeight.h1,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.sm,
+    fontSize: 26,
+    lineHeight: 32,
+    fontWeight: '800',
+    color: '#101828',
+    marginBottom: 6,
+    letterSpacing: -0.4,
   },
   subtitle: {
-    fontSize: theme.typography.fontSize.body,
-    lineHeight: theme.typography.lineHeight.body,
-    color: theme.colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 22,
+    color: '#667085',
+  },
+  emailPill: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
+    backgroundColor: '#F2F4F7',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   emailHighlight: {
-    fontSize: theme.typography.fontSize.subheading,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.primary,
-    marginTop: theme.spacing.xs,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#101828',
   },
   successCard: {
-    backgroundColor: theme.colors.successLight,
-    borderColor: theme.colors.success,
+    backgroundColor: '#ECFDF3',
+    borderColor: '#A6F4C5',
     borderWidth: 1,
-    marginBottom: theme.spacing.xl,
-    padding: theme.spacing.lg,
+    borderRadius: 12,
+    marginBottom: 20,
+    padding: 14,
   },
   successText: {
-    color: theme.colors.success,
-    fontSize: theme.typography.fontSize.body,
-    fontWeight: theme.typography.fontWeight.medium,
+    color: '#027A48',
+    fontSize: 14,
+    fontWeight: '600',
   },
   errorCard: {
-    backgroundColor: theme.colors.errorLight,
-    borderColor: theme.colors.error,
+    backgroundColor: '#FEF3F2',
+    borderColor: '#FECDCA',
     borderWidth: 1,
-    marginBottom: theme.spacing.xl,
-    padding: theme.spacing.lg,
+    borderRadius: 12,
+    marginBottom: 20,
+    padding: 14,
   },
   errorTitle: {
-    fontSize: theme.typography.fontSize.sm,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.error,
-    marginBottom: theme.spacing.xs,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#D92D20',
+    marginBottom: 4,
   },
   errorMessage: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.error,
-    lineHeight: theme.typography.lineHeight.sm,
+    fontSize: 13,
+    color: '#B42318',
+    lineHeight: 18,
   },
   otpContainer: {
-    marginBottom: theme.spacing['2xl'],
+    marginBottom: 24,
   },
   inputLabel: {
-    fontSize: theme.typography.fontSize.sm,
-    fontWeight: theme.typography.fontWeight.medium,
-    color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.sm,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#101828',
+    marginBottom: 8,
   },
   otpInput: {
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.lg,
+    backgroundColor: '#FAFAF8',
+    borderWidth: 1.5,
+    borderColor: '#E4E7EC',
+    borderRadius: 14,
     minHeight: 56,
-    fontSize: 28,
-    fontWeight: theme.typography.fontWeight.bold,
-    letterSpacing: 12,
+    fontSize: 30,
+    fontWeight: '800',
+    letterSpacing: 14,
     textAlign: 'center',
     color: theme.colors.primary,
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: 16,
   },
   helperText: {
-    marginTop: theme.spacing.sm,
-    fontSize: theme.typography.fontSize.label,
-    color: theme.colors.textSecondary,
+    marginTop: 8,
+    fontSize: 12,
+    color: '#667085',
     textAlign: 'center',
   },
   verifyButton: {
-    marginBottom: theme.spacing.xl,
+    marginBottom: 20,
   },
   resendSection: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: theme.spacing.lg,
+    marginBottom: 16,
   },
   resendQuestion: {
-    fontSize: theme.typography.fontSize.body,
-    color: theme.colors.textSecondary,
+    fontSize: 14,
+    color: '#667085',
   },
   resendLink: {
-    fontSize: theme.typography.fontSize.body,
+    fontSize: 14,
     color: theme.colors.primary,
-    fontWeight: theme.typography.fontWeight.bold,
+    fontWeight: '700',
   },
   resendDisabled: {
-    color: theme.colors.textSecondary,
-    fontWeight: theme.typography.fontWeight.regular,
+    color: '#98A2B3',
+    fontWeight: '400',
   },
   backSection: {
     alignItems: 'center',
-    marginTop: theme.spacing.md,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#F2F4F7',
   },
   backLink: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.textSecondary,
-    textDecorationLine: 'underline',
+    fontSize: 13,
+    color: '#667085',
+    fontWeight: '500',
   },
 });

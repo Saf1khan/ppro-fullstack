@@ -27,7 +27,6 @@ export default function ProfileOnboardingScreen() {
   const [apiError, setApiError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Live client-side validation
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -69,10 +68,7 @@ export default function ProfileOnboardingScreen() {
         business_name: businessName.trim() ? businessName.trim() : undefined,
       });
 
-      // Update session state so has_profile is now true
       await refreshUser();
-
-      // Transition to next onboarding step: Task Selection
       router.replace('/(onboarding)/task-selection');
     } catch (err) {
       setApiError(formatApiErrorMessage(err));
@@ -91,49 +87,50 @@ export default function ProfileOnboardingScreen() {
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>STEP 1 OF 2 · ONBOARDING</Text>
-            </View>
-            <Text style={styles.title}>Provider Profile</Text>
-            <Text style={styles.subtitle}>
-              Tell us who you are so neighborhood clients and your lifestyle
-              manager can connect with you.
-            </Text>
-          </View>
-
-          {/* User Account Pill */}
-          <View style={styles.accountPill}>
-            <Text style={styles.accountPillLabel}>Verified Account:</Text>
-            <Text style={styles.accountPillEmail}>{user?.email}</Text>
-          </View>
-
-          {/* Form Card */}
-          <Card style={styles.formCard}>
-            {apiError ? (
-              <View style={styles.errorBanner}>
-                <Text style={styles.errorBannerText}>{apiError}</Text>
+          <View style={styles.centerContainer}>
+            {/* Header */}
+            <View style={styles.header}>
+              <View style={styles.badge}>
+                <Text style={styles.badgeDot}>●</Text>
+                <Text style={styles.badgeText}>STEP 1 OF 2 · PROVIDER SETUP</Text>
               </View>
-            ) : null}
+              <Text style={styles.title}>Complete Profile</Text>
+              <Text style={styles.subtitle}>
+                Tell us who you are so local customers can discover and book your services.
+              </Text>
+            </View>
 
-            {/* Full Name */}
-            <Input
-              label="Full Name *"
-              placeholder="e.g. Ramesh Kumar"
-              value={fullName}
-              onChangeText={(text) => {
-                setFullName(text);
-                if (errors.fullName) {
-                  setErrors((prev) => ({ ...prev, fullName: '' }));
-                }
-              }}
-              error={errors.fullName}
-              autoCapitalize="words"
-            />
+            {/* User Account Pill */}
+            <View style={styles.accountPill}>
+              <Text style={styles.accountCheck}>✓</Text>
+              <Text style={styles.accountPillLabel}>Verified ID:</Text>
+              <Text style={styles.accountPillEmail}>{user?.email}</Text>
+            </View>
 
-            {/* Indian Mobile Number */}
-            <View style={styles.phoneSection}>
+            {/* Form Card */}
+            <Card variant="elevated" style={styles.formCard}>
+              {apiError ? (
+                <View style={styles.errorBanner}>
+                  <Text style={styles.errorBannerText}>{apiError}</Text>
+                </View>
+              ) : null}
+
+              {/* Full Name */}
+              <Input
+                label="Full Name *"
+                placeholder="e.g. Ramesh Kumar"
+                value={fullName}
+                onChangeText={(text) => {
+                  setFullName(text);
+                  if (errors.fullName) {
+                    setErrors((prev) => ({ ...prev, fullName: '' }));
+                  }
+                }}
+                error={errors.fullName}
+                autoCapitalize="words"
+              />
+
+              {/* Indian Mobile Number */}
               <Input
                 label="Mobile Number (Indian +91) *"
                 placeholder="98765 43210"
@@ -148,42 +145,42 @@ export default function ProfileOnboardingScreen() {
                 keyboardType="phone-pad"
                 helperText="10-digit number. We will prefix +91 automatically."
               />
-            </View>
 
-            {/* Address */}
-            <Input
-              label="Service Address / Operating Area *"
-              placeholder="House/Flat No., Street, Locality, City, PIN"
-              value={address}
-              onChangeText={(text) => {
-                setAddress(text);
-                if (errors.address) {
-                  setErrors((prev) => ({ ...prev, address: '' }));
-                }
-              }}
-              error={errors.address}
-              multiline
-              numberOfLines={3}
-              style={styles.multilineInput}
-            />
+              {/* Address */}
+              <Input
+                label="Service Address / Operating Area *"
+                placeholder="Flat / Building, Street, Locality, City"
+                value={address}
+                onChangeText={(text) => {
+                  setAddress(text);
+                  if (errors.address) {
+                    setErrors((prev) => ({ ...prev, address: '' }));
+                  }
+                }}
+                error={errors.address}
+                multiline
+                numberOfLines={3}
+                style={styles.multilineInput}
+              />
 
-            {/* Business Name (Optional) */}
-            <Input
-              label="Business / Agency Name (Optional)"
-              placeholder="e.g. Kumar Home Maintenance"
-              value={businessName}
-              onChangeText={setBusinessName}
-              helperText="Optional: Leave blank if operating as an independent pro."
-              autoCapitalize="words"
-            />
+              {/* Business Name (Optional) */}
+              <Input
+                label="Business / Trade Name (Optional)"
+                placeholder="e.g. Kumar Maintenance Solutions"
+                value={businessName}
+                onChangeText={setBusinessName}
+                helperText="Optional: Leave blank if operating independently."
+                autoCapitalize="words"
+              />
 
-            <Button
-              title="Save & Continue"
-              onPress={handleSubmit}
-              loading={loading}
-              style={styles.submitButton}
-            />
-          </Card>
+              <Button
+                title="Save & Continue to Services →"
+                onPress={handleSubmit}
+                loading={loading}
+                style={styles.submitButton}
+              />
+            </Card>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -193,91 +190,113 @@ export default function ProfileOnboardingScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: '#FAFAF7',
   },
   keyboardView: {
     flex: 1,
   },
   container: {
-    paddingHorizontal: theme.spacing['2xl'],
-    paddingTop: theme.spacing['2xl'],
-    paddingBottom: theme.spacing['4xl'],
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 64,
+  },
+  centerContainer: {
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
   },
   header: {
-    marginBottom: theme.spacing.xl,
+    marginBottom: 20,
   },
   badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: theme.colors.primaryLight,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: theme.radius.sm,
-    marginBottom: theme.spacing.sm,
+    backgroundColor: '#E8F8F2',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 9999,
+    marginBottom: 12,
+    gap: 6,
+  },
+  badgeDot: {
+    fontSize: 8,
+    color: theme.colors.primary,
   },
   badgeText: {
     color: theme.colors.primary,
-    fontSize: theme.typography.fontSize.caption,
-    fontWeight: theme.typography.fontWeight.bold,
-    letterSpacing: 0.8,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.6,
   },
   title: {
-    fontSize: theme.typography.fontSize.h1,
-    lineHeight: theme.typography.lineHeight.h1,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.xs,
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: '800',
+    color: '#101828',
+    marginBottom: 6,
+    letterSpacing: -0.4,
   },
   subtitle: {
-    fontSize: theme.typography.fontSize.body,
-    lineHeight: theme.typography.lineHeight.body,
-    color: theme.colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 22,
+    color: '#667085',
   },
   accountPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.surface,
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.lg,
-    borderRadius: theme.radius.full,
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    marginBottom: theme.spacing.xl,
-    gap: theme.spacing.xs,
+    borderColor: '#EAECF0',
+    marginBottom: 20,
+    gap: 8,
+    ...theme.shadows.subtle,
+  },
+  accountCheck: {
+    color: '#027A48',
+    fontSize: 14,
+    fontWeight: '800',
   },
   accountPillLabel: {
-    fontSize: theme.typography.fontSize.label,
-    color: theme.colors.textSecondary,
+    fontSize: 12,
+    color: '#667085',
+    fontWeight: '600',
   },
   accountPillEmail: {
-    fontSize: theme.typography.fontSize.label,
-    color: theme.colors.textPrimary,
-    fontWeight: theme.typography.fontWeight.semiBold,
+    fontSize: 13,
+    color: '#101828',
+    fontWeight: '700',
   },
   formCard: {
-    padding: theme.spacing.xl,
-  },
-  phoneSection: {
-    marginBottom: theme.spacing.xs,
+    padding: 24,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F2F4F7',
+    ...theme.shadows.card,
   },
   multilineInput: {
     minHeight: 76,
     textAlignVertical: 'top',
-    paddingTop: theme.spacing.md,
+    paddingTop: 12,
   },
   errorBanner: {
-    backgroundColor: theme.colors.errorLight,
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.lg,
+    backgroundColor: '#FEF3F2',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 20,
     borderLeftWidth: 4,
-    borderLeftColor: theme.colors.error,
+    borderLeftColor: '#D92D20',
   },
   errorBannerText: {
-    color: theme.colors.error,
-    fontSize: theme.typography.fontSize.sm,
-    fontWeight: theme.typography.fontWeight.medium,
+    color: '#B42318',
+    fontSize: 13,
+    fontWeight: '600',
   },
   submitButton: {
-    marginTop: theme.spacing.md,
+    marginTop: 12,
   },
 });

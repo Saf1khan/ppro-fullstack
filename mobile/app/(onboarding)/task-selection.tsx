@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Button, Card } from '../../src/components';
+import { getCategoryVisual, getTaskVisual } from '../../src/constants/serviceIcons';
 import { formatApiErrorMessage, tasksApi } from '../../src/services/api';
 import { theme } from '../../src/theme';
 import { CategoryWithTasks, Task } from '../../src/types/task';
@@ -26,7 +27,6 @@ export default function TaskSelectionScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load catalogue and any pre-existing selections
   const loadCatalogue = async () => {
     setLoading(true);
     setError(null);
@@ -37,7 +37,6 @@ export default function TaskSelectionScreen() {
       ]);
       setCategories(cats);
 
-      // Pre-select any tasks user already picked previously
       if (mySelection.tasks && mySelection.tasks.length > 0) {
         setSelectedTaskIds(new Set(mySelection.tasks.map((t) => t.id)));
       }
@@ -52,7 +51,6 @@ export default function TaskSelectionScreen() {
     loadCatalogue();
   }, []);
 
-  // Flatten all tasks with category label
   const allTasks = useMemo<Task[]>(() => {
     const list: Task[] = [];
     categories.forEach((cat) => {
@@ -63,7 +61,6 @@ export default function TaskSelectionScreen() {
     return list;
   }, [categories]);
 
-  // Filter tasks by active category and search query
   const filteredTasks = useMemo<Task[]>(() => {
     let result = allTasks;
 
@@ -110,159 +107,208 @@ export default function TaskSelectionScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>STEP 2 OF 2 · TASK CATALOGUE</Text>
-        </View>
-        <Text style={styles.title}>Select Your Services</Text>
-        <Text style={styles.subtitle}>
-          Choose the tasks you want to handle as a verified provider. You can pick multiple tasks.
-        </Text>
-      </View>
-
-      {/* Search Input Bar */}
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search services (e.g., plumbing, cleaning, AC)..."
-          placeholderTextColor={theme.colors.textSecondary}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          autoCapitalize="none"
-        />
-        {searchQuery ? (
-          <TouchableOpacity
-            style={styles.clearSearchButton}
-            onPress={() => setSearchQuery('')}
-          >
-            <Text style={styles.clearSearchText}>✕</Text>
-          </TouchableOpacity>
-        ) : null}
-      </View>
-
-      {/* Category Filter Chips */}
-      <View style={styles.categoriesWrapper}>
-        <FlatList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          data={[{ slug: 'all', name: 'All Services' }, ...categories]}
-          keyExtractor={(item) => item.slug}
-          contentContainerStyle={styles.categoryChipsList}
-          renderItem={({ item }) => {
-            const isActive = activeCategorySlug === item.slug;
-            return (
-              <TouchableOpacity
-                style={[styles.categoryChip, isActive && styles.activeCategoryChip]}
-                onPress={() => setActiveCategorySlug(item.slug)}
-              >
-                <Text
-                  style={[
-                    styles.categoryChipText,
-                    isActive && styles.activeCategoryChipText,
-                  ]}
-                >
-                  {item.name}
-                </Text>
-              </TouchableOpacity>
-            );
-          }}
-        />
-      </View>
-
-      {/* Main Content Area */}
-      {loading ? (
-        <View style={styles.centeredContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading service catalogue...</Text>
-        </View>
-      ) : error ? (
-        <View style={styles.centeredContainer}>
-          <Card style={styles.errorCard}>
-            <Text style={styles.errorTitle}>Catalogue Unavailable</Text>
-            <Text style={styles.errorMessage}>{error}</Text>
-            <Button title="Retry" onPress={loadCatalogue} style={styles.retryButton} />
-          </Card>
-        </View>
-      ) : filteredTasks.length === 0 ? (
-        <View style={styles.centeredContainer}>
-          <Text style={styles.emptyTitle}>No Services Found</Text>
-          <Text style={styles.emptyMessage}>
-            {searchQuery
-              ? `No services match "${searchQuery}". Try a different keyword.`
-              : 'No services available in this category.'}
+      <View style={styles.contentWrapper}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.badge}>
+            <Text style={styles.badgeDot}>●</Text>
+            <Text style={styles.badgeText}>STEP 2 OF 2 · SERVICE CATALOGUE</Text>
+          </View>
+          <Text style={styles.title}>Select Your Services</Text>
+          <Text style={styles.subtitle}>
+            Choose the household and maintenance tasks you can deliver in your neighbourhood.
           </Text>
-          {searchQuery ? (
-            <Button
-              title="Clear Search"
-              variant="outline"
-              onPress={() => setSearchQuery('')}
-              style={styles.clearButton}
-            />
-          ) : null}
         </View>
-      ) : (
-        <FlatList
-          data={filteredTasks}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.tasksList}
-          renderItem={({ item }) => {
-            const isSelected = selectedTaskIds.has(item.id);
-            return (
+
+        {/* Search Input Bar */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchInner}>
+            <Text style={styles.searchIcon}>🔍</Text>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search services (e.g. plumbing, degreasing, AC)..."
+              placeholderTextColor="#98A2B3"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCapitalize="none"
+            />
+            {searchQuery ? (
               <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => toggleTask(item.id)}
+                style={styles.clearSearchButton}
+                onPress={() => setSearchQuery('')}
               >
-                <Card style={[styles.taskCard, isSelected && styles.selectedTaskCard]}>
-                  <View style={styles.taskCardRow}>
-                    {/* Checkbox Icon */}
+                <Text style={styles.clearSearchText}>✕</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        </View>
+
+        {/* Category Filter Chips */}
+        <View style={styles.categoriesWrapper}>
+          <FlatList
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            data={[{ slug: 'all', name: 'All Services' }, ...categories]}
+            keyExtractor={(item) => item.slug}
+            contentContainerStyle={styles.categoryChipsList}
+            renderItem={({ item }) => {
+              const isActive = activeCategorySlug === item.slug;
+              const catVisual = getCategoryVisual(item.slug);
+              const chipIcon = item.slug === 'all' ? '✨' : catVisual.icon;
+
+              return (
+                <TouchableOpacity
+                  style={[styles.categoryChip, isActive && styles.activeCategoryChip]}
+                  onPress={() => setActiveCategorySlug(item.slug)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.chipIcon}>{chipIcon}</Text>
+                  <Text
+                    style={[
+                      styles.categoryChipText,
+                      isActive && styles.activeCategoryChipText,
+                    ]}
+                  >
+                    {item.name}
+                  </Text>
+                </TouchableOpacity>
+              );
+            }}
+          />
+        </View>
+
+        {/* Main Content Area */}
+        {loading ? (
+          <View style={styles.centeredContainer}>
+            <ActivityIndicator size="large" color={theme.colors.primary} />
+            <Text style={styles.loadingText}>Loading verified services...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.centeredContainer}>
+            <Card style={styles.errorCard}>
+              <Text style={styles.errorTitle}>Catalogue Unavailable</Text>
+              <Text style={styles.errorMessage}>{error}</Text>
+              <Button title="Retry" onPress={loadCatalogue} style={styles.retryButton} />
+            </Card>
+          </View>
+        ) : filteredTasks.length === 0 ? (
+          <View style={styles.centeredContainer}>
+            <Text style={styles.emptyTitle}>No Services Found</Text>
+            <Text style={styles.emptyMessage}>
+              {searchQuery
+                ? `No services match "${searchQuery}". Try a different keyword.`
+                : 'No services available in this category.'}
+            </Text>
+            {searchQuery ? (
+              <Button
+                title="Clear Search"
+                variant="outline"
+                onPress={() => setSearchQuery('')}
+                style={styles.clearButton}
+              />
+            ) : null}
+          </View>
+        ) : (
+          <FlatList
+            data={filteredTasks}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.tasksList}
+            renderItem={({ item }) => {
+              const isSelected = selectedTaskIds.has(item.id);
+              const taskVisual = getTaskVisual(item.name);
+              const catVisual = getCategoryVisual(item.category_name);
+
+              return (
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={() => toggleTask(item.id)}
+                >
+                  <View
+                    style={[
+                      styles.taskCard,
+                      isSelected && styles.selectedTaskCard,
+                    ]}
+                  >
+                    {/* Visual Service Avatar Box */}
                     <View
                       style={[
-                        styles.checkbox,
-                        isSelected && styles.checkboxSelected,
+                        styles.serviceAvatar,
+                        { backgroundColor: taskVisual.accentBg },
                       ]}
                     >
-                      {isSelected ? (
-                        <Text style={styles.checkmarkText}>✓</Text>
-                      ) : null}
+                      <Text style={styles.serviceAvatarIcon}>{taskVisual.icon}</Text>
                     </View>
 
                     {/* Task Info */}
                     <View style={styles.taskInfo}>
-                      {item.category_name ? (
-                        <View style={styles.categoryTag}>
-                          <Text style={styles.categoryTagText}>
-                            {item.category_name.toUpperCase()}
-                          </Text>
-                        </View>
-                      ) : null}
+                      <View style={styles.tagRow}>
+                        {item.category_name ? (
+                          <View
+                            style={[
+                              styles.categoryTag,
+                              { backgroundColor: catVisual.badgeBg },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.categoryTagText,
+                                { color: catVisual.textColor },
+                              ]}
+                            >
+                              {item.category_name.toUpperCase()}
+                            </Text>
+                          </View>
+                        ) : null}
+                      </View>
+
                       <Text style={styles.taskName}>{item.name}</Text>
-                      <Text style={styles.taskDescription}>
+                      <Text style={styles.taskDescription} numberOfLines={2}>
                         {item.short_description}
                       </Text>
                     </View>
-                  </View>
-                </Card>
-              </TouchableOpacity>
-            );
-          }}
-        />
-      )}
 
-      {/* Sticky Bottom Bar */}
+                    {/* Zepto-style Action Pill */}
+                    <View style={styles.actionPillContainer}>
+                      <View
+                        style={[
+                          styles.actionPill,
+                          isSelected && styles.actionPillSelected,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.actionPillText,
+                            isSelected && styles.actionPillTextSelected,
+                          ]}
+                        >
+                          {isSelected ? '✓ Added' : '+ Add'}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            }}
+          />
+        )}
+      </View>
+
+      {/* Floating Bottom Bar (Zepto 140px bottom clearance) */}
       <View style={styles.bottomBar}>
-        <View style={styles.bottomInfo}>
-          <Text style={styles.selectedCountLabel}>Selection:</Text>
-          <Text style={styles.selectedCountValue}>
-            {selectedTaskIds.size} {selectedTaskIds.size === 1 ? 'task' : 'tasks'} selected
-          </Text>
+        <View style={styles.bottomBarInner}>
+          <View style={styles.bottomInfo}>
+            <Text style={styles.selectedCountLabel}>SELECTION</Text>
+            <Text style={styles.selectedCountValue}>
+              {selectedTaskIds.size} {selectedTaskIds.size === 1 ? 'service' : 'services'} selected
+            </Text>
+          </View>
+          <Button
+            title="Review Selection →"
+            onPress={handleReviewSelection}
+            disabled={selectedTaskIds.size === 0}
+            style={styles.reviewButton}
+          />
         </View>
-        <Button
-          title="Review Selection"
-          onPress={handleReviewSelection}
-          disabled={selectedTaskIds.size === 0}
-          style={styles.reviewButton}
-        />
       </View>
     </SafeAreaView>
   );
@@ -271,200 +317,256 @@ export default function TaskSelectionScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: '#FAFAF7',
+  },
+  contentWrapper: {
+    flex: 1,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   header: {
-    paddingHorizontal: theme.spacing['2xl'],
-    paddingTop: theme.spacing.lg,
-    paddingBottom: theme.spacing.md,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
   },
   badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: theme.colors.primaryLight,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: theme.radius.sm,
-    marginBottom: theme.spacing.xs,
+    backgroundColor: '#E8F8F2',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 9999,
+    marginBottom: 8,
+    gap: 6,
+  },
+  badgeDot: {
+    fontSize: 8,
+    color: theme.colors.primary,
   },
   badgeText: {
     color: theme.colors.primary,
-    fontSize: theme.typography.fontSize.caption,
-    fontWeight: theme.typography.fontWeight.bold,
-    letterSpacing: 0.8,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.6,
   },
   title: {
-    fontSize: theme.typography.fontSize.h2,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.textPrimary,
+    fontSize: 26,
+    lineHeight: 32,
+    fontWeight: '800',
+    color: '#101828',
     marginBottom: 4,
+    letterSpacing: -0.4,
   },
   subtitle: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.textSecondary,
+    fontSize: 14,
+    color: '#667085',
     lineHeight: 20,
   },
   searchContainer: {
-    paddingHorizontal: theme.spacing['2xl'],
-    marginBottom: theme.spacing.md,
-    position: 'relative',
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  searchInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#EAECF0',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    minHeight: 48,
+    ...theme.shadows.subtle,
+  },
+  searchIcon: {
+    fontSize: 16,
+    marginRight: 8,
   },
   searchInput: {
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.lg,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
-    fontSize: theme.typography.fontSize.body,
-    color: theme.colors.textPrimary,
+    flex: 1,
+    height: '100%',
+    fontSize: 14,
+    color: '#101828',
+    paddingVertical: 10,
   },
   clearSearchButton: {
-    position: 'absolute',
-    right: 36,
-    top: 14,
-    padding: 4,
+    padding: 6,
   },
   clearSearchText: {
-    fontSize: 16,
-    color: theme.colors.textSecondary,
+    fontSize: 14,
+    color: '#98A2B3',
+    fontWeight: '700',
   },
   categoriesWrapper: {
-    marginBottom: theme.spacing.md,
+    marginBottom: 14,
   },
   categoryChipsList: {
-    paddingHorizontal: theme.spacing['2xl'],
-    gap: theme.spacing.sm,
+    paddingHorizontal: 16,
+    gap: 8,
   },
   categoryChip: {
-    backgroundColor: theme.colors.surface,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.radius.full,
+    borderColor: '#EAECF0',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 9999,
+    gap: 6,
+    ...theme.shadows.subtle,
   },
   activeCategoryChip: {
     backgroundColor: theme.colors.primary,
     borderColor: theme.colors.primary,
+    shadowColor: theme.colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  chipIcon: {
+    fontSize: 14,
   },
   categoryChipText: {
-    fontSize: theme.typography.fontSize.sm,
-    fontWeight: theme.typography.fontWeight.medium,
-    color: theme.colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#344054',
   },
   activeCategoryChipText: {
-    color: theme.colors.surface,
-    fontWeight: theme.typography.fontWeight.semiBold,
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   tasksList: {
-    paddingHorizontal: theme.spacing['2xl'],
-    paddingBottom: 110,
-    gap: theme.spacing.md,
+    paddingHorizontal: 16,
+    paddingBottom: 140, // 140px bottom padding for floating bottom bar clearance
+    gap: 12,
   },
   taskCard: {
-    padding: theme.spacing.lg,
-    borderColor: theme.colors.border,
-    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#F2F4F7',
+    padding: 14,
+    ...theme.shadows.card,
   },
   selectedTaskCard: {
     borderColor: theme.colors.primary,
     backgroundColor: '#F5FAF8',
   },
-  taskCardRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: theme.spacing.md,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
-    justifyContent: 'center',
+  serviceAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     alignItems: 'center',
-    marginTop: 2,
+    justifyContent: 'center',
+    marginRight: 12,
   },
-  checkboxSelected: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
-  },
-  checkmarkText: {
-    color: theme.colors.surface,
-    fontSize: 14,
-    fontWeight: 'bold',
+  serviceAvatarIcon: {
+    fontSize: 24,
   },
   taskInfo: {
     flex: 1,
+    marginRight: 10,
   },
-  categoryTag: {
-    alignSelf: 'flex-start',
-    backgroundColor: theme.colors.primaryLight,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: 2,
-    borderRadius: theme.radius.sm,
+  tagRow: {
+    flexDirection: 'row',
     marginBottom: 4,
   },
+  categoryTag: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
   categoryTagText: {
-    color: theme.colors.primary,
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: '700',
     letterSpacing: 0.5,
   },
   taskName: {
-    fontSize: theme.typography.fontSize.body,
-    fontWeight: theme.typography.fontWeight.semiBold,
-    color: theme.colors.textPrimary,
-    marginBottom: 4,
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#101828',
+    marginBottom: 3,
   },
   taskDescription: {
-    fontSize: theme.typography.fontSize.sm,
-    lineHeight: 19,
-    color: theme.colors.textSecondary,
+    fontSize: 12,
+    color: '#667085',
+    lineHeight: 18,
+  },
+  actionPillContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 9999,
+    borderWidth: 1.5,
+    borderColor: theme.colors.primary,
+    backgroundColor: '#FFFFFF',
+    minWidth: 74,
+    alignItems: 'center',
+  },
+  actionPillSelected: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  actionPillText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: theme.colors.primary,
+  },
+  actionPillTextSelected: {
+    color: '#FFFFFF',
   },
   centeredContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing['2xl'],
+    padding: 24,
   },
   loadingText: {
-    marginTop: theme.spacing.md,
-    fontSize: theme.typography.fontSize.body,
-    color: theme.colors.textSecondary,
+    marginTop: 12,
+    color: '#667085',
+    fontSize: 14,
   },
   errorCard: {
-    padding: theme.spacing.xl,
+    padding: 20,
     alignItems: 'center',
+    backgroundColor: '#FEF3F2',
+    borderColor: '#FECDCA',
   },
   errorTitle: {
-    fontSize: theme.typography.fontSize.subheading,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.error,
-    marginBottom: theme.spacing.sm,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#D92D20',
+    marginBottom: 6,
   },
   errorMessage: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.textSecondary,
+    fontSize: 13,
+    color: '#667085',
     textAlign: 'center',
-    marginBottom: theme.spacing.lg,
+    marginBottom: 16,
   },
   retryButton: {
     minWidth: 140,
     width: 'auto',
   },
   emptyTitle: {
-    fontSize: theme.typography.fontSize.subheading,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.textPrimary,
-    marginBottom: 4,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#101828',
+    marginBottom: 6,
   },
   emptyMessage: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.textSecondary,
+    fontSize: 13,
+    color: '#667085',
     textAlign: 'center',
-    marginBottom: theme.spacing.lg,
+    marginBottom: 16,
   },
   clearButton: {
     minWidth: 140,
@@ -475,39 +577,41 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-    paddingHorizontal: theme.spacing['2xl'],
-    paddingVertical: theme.spacing.lg,
+    borderTopColor: '#EAECF0',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    ...theme.shadows.floatingBottom,
+  },
+  bottomBarInner: {
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: theme.spacing.md,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
+    gap: 16,
   },
   bottomInfo: {
     flex: 1,
-    marginRight: theme.spacing.md,
   },
   selectedCountLabel: {
-    fontSize: theme.typography.fontSize.caption,
-    color: theme.colors.textSecondary,
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#667085',
+    letterSpacing: 0.6,
     marginBottom: 2,
   },
   selectedCountValue: {
-    fontSize: theme.typography.fontSize.body,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#101828',
   },
   reviewButton: {
     width: 'auto',
     flexShrink: 0,
-    minWidth: 160,
-    paddingHorizontal: theme.spacing.xl,
+    minWidth: 170,
+    paddingHorizontal: 20,
   },
 });

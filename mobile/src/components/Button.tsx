@@ -45,7 +45,7 @@ export const Button: React.FC<ButtonProps> = ({
 
   return (
     <TouchableOpacity
-      activeOpacity={0.8}
+      activeOpacity={0.85}
       disabled={isDisabled}
       style={containerStyles as ViewStyle[]}
       accessibilityRole="button"
@@ -66,7 +66,7 @@ export const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: theme.radius.lg, // 12px
+    borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -74,17 +74,24 @@ const styles = StyleSheet.create({
   },
   primary: {
     backgroundColor: theme.colors.primary,
+    shadowColor: theme.colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 3,
   },
   primaryDisabled: {
     backgroundColor: theme.colors.primaryDisabled,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   secondary: {
     backgroundColor: theme.colors.primaryLight,
   },
   outline: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#E4E7EC',
   },
   ghost: {
     backgroundColor: 'transparent',
@@ -95,21 +102,23 @@ const styles = StyleSheet.create({
   size_sm: {
     paddingVertical: theme.spacing.sm,
     paddingHorizontal: theme.spacing.md,
-    minHeight: 40,
+    minHeight: 38,
+    borderRadius: 10,
   },
   size_md: {
-    paddingVertical: theme.spacing.md,
+    paddingVertical: 14,
     paddingHorizontal: theme.spacing['2xl'],
-    minHeight: 56, // ~56px height specification
+    minHeight: 52,
   },
   size_lg: {
-    paddingVertical: theme.spacing.lg,
+    paddingVertical: 16,
     paddingHorizontal: theme.spacing['2xl'],
-    minHeight: 60,
+    minHeight: 56,
   },
   textBase: {
-    fontWeight: theme.typography.fontWeight.semiBold,
+    fontWeight: theme.typography.fontWeight.bold,
     textAlign: 'center',
+    letterSpacing: 0.2,
   },
   primaryText: {
     color: theme.colors.textInverse,

@@ -75,7 +75,6 @@ export default function RegisterScreen() {
         confirm_password: confirmPassword,
       });
 
-      // Registration successful -> Navigate to email verification screen
       router.push({
         pathname: '/(auth)/verify-email',
         params: { email: normalizedEmail },
@@ -97,81 +96,91 @@ export default function RegisterScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>
-            Join PadosiPro to find trusted services and professional opportunities in your neighborhood.
-          </Text>
-        </View>
+        <View style={styles.centerContainer}>
+          <Card variant="elevated" style={styles.authCard}>
+            {/* Header Badge */}
+            <View style={styles.brandBadge}>
+              <Text style={styles.brandBadgeDot}>●</Text>
+              <Text style={styles.brandBadgeText}>JOIN PADOSIPRO</Text>
+            </View>
 
-        {serverError ? (
-          <Card style={styles.errorCard}>
-            <Text style={styles.errorTitle}>Registration Failed</Text>
-            <Text style={styles.errorMessage}>{serverError}</Text>
+            <View style={styles.header}>
+              <Text style={styles.title}>Create Account</Text>
+              <Text style={styles.subtitle}>
+                Start offering verified home and local services in your neighborhood.
+              </Text>
+            </View>
+
+            {serverError ? (
+              <View style={styles.errorCard}>
+                <Text style={styles.errorTitle}>Registration Failed</Text>
+                <Text style={styles.errorMessage}>{serverError}</Text>
+              </View>
+            ) : null}
+
+            <View style={styles.form}>
+              <Input
+                label="Email Address"
+                placeholder="you@example.com"
+                value={email}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  if (emailError) setEmailError('');
+                  if (serverError) setServerError('');
+                }}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                error={emailError}
+              />
+
+              <Input
+                label="Password"
+                placeholder="At least 8 characters"
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  if (passwordError) setPasswordError('');
+                  if (serverError) setServerError('');
+                }}
+                isPassword
+                autoCapitalize="none"
+                error={passwordError}
+              />
+
+              <Input
+                label="Confirm Password"
+                placeholder="Re-enter your password"
+                value={confirmPassword}
+                onChangeText={(text) => {
+                  setConfirmPassword(text);
+                  if (confirmPasswordError) setConfirmPasswordError('');
+                  if (serverError) setServerError('');
+                }}
+                isPassword
+                autoCapitalize="none"
+                error={confirmPasswordError}
+              />
+
+              <Button
+                title="Create Account"
+                onPress={handleRegister}
+                loading={loading}
+                style={styles.submitButton}
+              />
+            </View>
+
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Already have an account? </Text>
+              <TouchableOpacity
+                onPress={() => router.replace('/(auth)/login')}
+                accessibilityRole="button"
+                accessibilityLabel="Sign in"
+              >
+                <Text style={styles.linkText}>Sign in</Text>
+              </TouchableOpacity>
+            </View>
           </Card>
-        ) : null}
-
-        <View style={styles.form}>
-          <Input
-            label="Email Address"
-            placeholder="you@example.com"
-            value={email}
-            onChangeText={(text) => {
-              setEmail(text);
-              if (emailError) setEmailError('');
-              if (serverError) setServerError('');
-            }}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            error={emailError}
-          />
-
-          <Input
-            label="Password"
-            placeholder="At least 8 characters"
-            value={password}
-            onChangeText={(text) => {
-              setPassword(text);
-              if (passwordError) setPasswordError('');
-              if (serverError) setServerError('');
-            }}
-            isPassword
-            autoCapitalize="none"
-            error={passwordError}
-          />
-
-          <Input
-            label="Confirm Password"
-            placeholder="Re-enter your password"
-            value={confirmPassword}
-            onChangeText={(text) => {
-              setConfirmPassword(text);
-              if (confirmPasswordError) setConfirmPasswordError('');
-              if (serverError) setServerError('');
-            }}
-            isPassword
-            autoCapitalize="none"
-            error={confirmPasswordError}
-          />
-
-          <Button
-            title="Create Account"
-            onPress={handleRegister}
-            loading={loading}
-            style={styles.submitButton}
-          />
-        </View>
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Already have an account? </Text>
-          <TouchableOpacity
-            onPress={() => router.replace('/(auth)/login')}
-            accessibilityRole="button"
-            accessibilityLabel="Sign in"
-          >
-            <Text style={styles.linkText}>Sign in</Text>
-          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -181,67 +190,106 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   keyboardContainer: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: '#FAFAF7',
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: theme.spacing['2xl'], // ~24px horizontal padding
-    paddingTop: theme.spacing['3xl'],
-    paddingBottom: theme.spacing['4xl'],
     justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 32,
+    minHeight: '100%',
+  },
+  centerContainer: {
+    width: '100%',
+    maxWidth: 460,
+    alignSelf: 'center',
+  },
+  authCard: {
+    padding: 28,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F2F4F7',
+    ...theme.shadows.card,
+  },
+  brandBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#E8F8F2',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 9999,
+    marginBottom: 16,
+    gap: 6,
+  },
+  brandBadgeDot: {
+    fontSize: 8,
+    color: theme.colors.primary,
+  },
+  brandBadgeText: {
+    color: theme.colors.primary,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.6,
   },
   header: {
-    marginBottom: theme.spacing['2xl'],
+    marginBottom: 24,
   },
   title: {
-    fontSize: theme.typography.fontSize.h1, // ~30px
-    lineHeight: theme.typography.lineHeight.h1,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.sm,
+    fontSize: 26,
+    lineHeight: 32,
+    fontWeight: '800',
+    color: '#101828',
+    marginBottom: 6,
+    letterSpacing: -0.4,
   },
   subtitle: {
-    fontSize: theme.typography.fontSize.body, // 16px
-    lineHeight: theme.typography.lineHeight.body,
-    color: theme.colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 22,
+    color: '#667085',
   },
   errorCard: {
-    backgroundColor: theme.colors.errorLight,
-    borderColor: theme.colors.error,
+    backgroundColor: '#FEF3F2',
+    borderColor: '#FECDCA',
     borderWidth: 1,
-    marginBottom: theme.spacing.xl,
-    padding: theme.spacing.lg,
+    borderRadius: 12,
+    marginBottom: 20,
+    padding: 14,
   },
   errorTitle: {
-    fontSize: theme.typography.fontSize.sm,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.error,
-    marginBottom: theme.spacing.xs,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#D92D20',
+    marginBottom: 4,
   },
   errorMessage: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.error,
-    lineHeight: theme.typography.lineHeight.sm,
+    fontSize: 13,
+    color: '#B42318',
+    lineHeight: 18,
   },
   form: {
-    marginBottom: theme.spacing['2xl'],
+    marginBottom: 16,
   },
   submitButton: {
-    marginTop: theme.spacing.sm,
+    marginTop: 8,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: theme.spacing.md,
+    marginTop: 12,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F2F4F7',
   },
   footerText: {
-    fontSize: theme.typography.fontSize.body,
-    color: theme.colors.textSecondary,
+    fontSize: 14,
+    color: '#667085',
   },
   linkText: {
-    fontSize: theme.typography.fontSize.body,
+    fontSize: 14,
     color: theme.colors.primary,
-    fontWeight: theme.typography.fontWeight.bold,
+    fontWeight: '700',
   },
 });
