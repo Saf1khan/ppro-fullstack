@@ -91,7 +91,6 @@ export default function ProfileOnboardingScreen() {
             {/* Header */}
             <View style={styles.header}>
               <View style={styles.badge}>
-                <Text style={styles.badgeDot}>●</Text>
                 <Text style={styles.badgeText}>STEP 1 OF 2 · PROVIDER SETUP</Text>
               </View>
               <Text style={styles.title}>Complete Profile</Text>
@@ -190,7 +189,7 @@ export default function ProfileOnboardingScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FAFAF7',
+    backgroundColor: '#F9FAFB',
   },
   keyboardView: {
     flex: 1,
@@ -209,38 +208,32 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: '#E8F8F2',
+    backgroundColor: '#E8F5F1',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 9999,
-    marginBottom: 12,
-    gap: 6,
-  },
-  badgeDot: {
-    fontSize: 8,
-    color: theme.colors.primary,
+    borderRadius: 6,
+    marginBottom: 10,
   },
   badgeText: {
-    color: theme.colors.primary,
+    color: '#155C49',
     fontSize: 11,
     fontWeight: '700',
-    letterSpacing: 0.6,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
   },
   title: {
-    fontSize: 28,
-    lineHeight: 34,
-    fontWeight: '800',
-    color: '#101828',
-    marginBottom: 6,
-    letterSpacing: -0.4,
+    fontSize: 26,
+    lineHeight: 32,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 4,
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 14,
     lineHeight: 22,
-    color: '#667085',
+    color: '#4B5563',
   },
   accountPill: {
     flexDirection: 'row',

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -111,7 +112,6 @@ export default function TaskSelectionScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.badge}>
-            <Text style={styles.badgeDot}>●</Text>
             <Text style={styles.badgeText}>STEP 2 OF 2 · SERVICE CATALOGUE</Text>
           </View>
           <Text style={styles.title}>Select Your Services</Text>
@@ -123,11 +123,10 @@ export default function TaskSelectionScreen() {
         {/* Search Input Bar */}
         <View style={styles.searchContainer}>
           <View style={styles.searchInner}>
-            <Text style={styles.searchIcon}>🔍</Text>
             <TextInput
               style={styles.searchInput}
               placeholder="Search services (e.g. plumbing, degreasing, AC)..."
-              placeholderTextColor="#98A2B3"
+              placeholderTextColor="#9CA3AF"
               value={searchQuery}
               onChangeText={setSearchQuery}
               autoCapitalize="none"
@@ -153,16 +152,12 @@ export default function TaskSelectionScreen() {
             contentContainerStyle={styles.categoryChipsList}
             renderItem={({ item }) => {
               const isActive = activeCategorySlug === item.slug;
-              const catVisual = getCategoryVisual(item.slug);
-              const chipIcon = item.slug === 'all' ? '✨' : catVisual.icon;
-
               return (
                 <TouchableOpacity
                   style={[styles.categoryChip, isActive && styles.activeCategoryChip]}
                   onPress={() => setActiveCategorySlug(item.slug)}
-                  activeOpacity={0.8}
+                  activeOpacity={0.82}
                 >
-                  <Text style={styles.chipIcon}>{chipIcon}</Text>
                   <Text
                     style={[
                       styles.categoryChipText,
@@ -220,7 +215,7 @@ export default function TaskSelectionScreen() {
 
               return (
                 <TouchableOpacity
-                  activeOpacity={0.85}
+                  activeOpacity={0.88}
                   onPress={() => toggleTask(item.id)}
                 >
                   <View
@@ -229,36 +224,33 @@ export default function TaskSelectionScreen() {
                       isSelected && styles.selectedTaskCard,
                     ]}
                   >
-                    {/* Visual Service Avatar Box */}
-                    <View
-                      style={[
-                        styles.serviceAvatar,
-                        { backgroundColor: taskVisual.accentBg },
-                      ]}
-                    >
-                      <Text style={styles.serviceAvatarIcon}>{taskVisual.icon}</Text>
+                    {/* Real Photographic Service Image */}
+                    <View style={styles.imageContainer}>
+                      <Image
+                        source={{ uri: taskVisual.image }}
+                        style={styles.serviceImage}
+                        resizeMode="cover"
+                      />
                     </View>
 
-                    {/* Task Info */}
+                    {/* Task Info with Micro-Typography */}
                     <View style={styles.taskInfo}>
                       <View style={styles.tagRow}>
-                        {item.category_name ? (
-                          <View
+                        <View
+                          style={[
+                            styles.categoryTag,
+                            { backgroundColor: catVisual.badgeBg },
+                          ]}
+                        >
+                          <Text
                             style={[
-                              styles.categoryTag,
-                              { backgroundColor: catVisual.badgeBg },
+                              styles.categoryTagText,
+                              { color: catVisual.textColor },
                             ]}
                           >
-                            <Text
-                              style={[
-                                styles.categoryTagText,
-                                { color: catVisual.textColor },
-                              ]}
-                            >
-                              {item.category_name.toUpperCase()}
-                            </Text>
-                          </View>
-                        ) : null}
+                            {taskVisual.badge}
+                          </Text>
+                        </View>
                       </View>
 
                       <Text style={styles.taskName}>{item.name}</Text>
@@ -267,7 +259,7 @@ export default function TaskSelectionScreen() {
                       </Text>
                     </View>
 
-                    {/* Zepto-style Action Pill */}
+                    {/* Action Pill */}
                     <View style={styles.actionPillContainer}>
                       <View
                         style={[
@@ -293,7 +285,7 @@ export default function TaskSelectionScreen() {
         )}
       </View>
 
-      {/* Floating Bottom Bar (Zepto 140px bottom clearance) */}
+      {/* Floating Bottom Bar */}
       <View style={styles.bottomBar}>
         <View style={styles.bottomBarInner}>
           <View style={styles.bottomInfo}>
@@ -317,7 +309,7 @@ export default function TaskSelectionScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FAFAF7',
+    backgroundColor: '#F9FAFB',
   },
   contentWrapper: {
     flex: 1,
@@ -327,42 +319,36 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
+    paddingTop: 18,
+    paddingBottom: 14,
   },
   badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: '#E8F8F2',
+    backgroundColor: '#E8F5F1',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 9999,
+    borderRadius: 6,
     marginBottom: 8,
-    gap: 6,
-  },
-  badgeDot: {
-    fontSize: 8,
-    color: theme.colors.primary,
   },
   badgeText: {
-    color: theme.colors.primary,
+    color: '#155C49',
     fontSize: 11,
     fontWeight: '700',
-    letterSpacing: 0.6,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
   },
   title: {
     fontSize: 26,
     lineHeight: 32,
-    fontWeight: '800',
-    color: '#101828',
+    fontWeight: '700',
+    letterSpacing: -0.5,
+    color: '#111827',
     marginBottom: 4,
-    letterSpacing: -0.4,
   },
   subtitle: {
     fontSize: 14,
-    color: '#667085',
-    lineHeight: 20,
+    color: '#4B5563',
+    lineHeight: 22,
   },
   searchContainer: {
     paddingHorizontal: 16,
@@ -372,22 +358,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
-    borderColor: '#EAECF0',
-    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
     paddingHorizontal: 14,
-    minHeight: 48,
+    minHeight: 46,
     ...theme.shadows.subtle,
-  },
-  searchIcon: {
-    fontSize: 16,
-    marginRight: 8,
   },
   searchInput: {
     flex: 1,
     height: '100%',
     fontSize: 14,
-    color: '#101828',
+    color: '#111827',
     paddingVertical: 10,
   },
   clearSearchButton: {
@@ -395,7 +377,7 @@ const styles = StyleSheet.create({
   },
   clearSearchText: {
     fontSize: 14,
-    color: '#98A2B3',
+    color: '#9CA3AF',
     fontWeight: '700',
   },
   categoriesWrapper: {
@@ -406,15 +388,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   categoryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#EAECF0',
+    borderColor: '#E5E7EB',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 9999,
-    gap: 6,
     ...theme.shadows.subtle,
   },
   activeCategoryChip: {
@@ -424,15 +403,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
-    elevation: 3,
-  },
-  chipIcon: {
-    fontSize: 14,
+    elevation: 2,
   },
   categoryChipText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#344054',
+    color: '#374151',
   },
   activeCategoryChipText: {
     color: '#FFFFFF',
@@ -448,25 +424,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: '#F2F4F7',
-    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.04)',
+    padding: 12,
     ...theme.shadows.card,
   },
   selectedTaskCard: {
     borderColor: theme.colors.primary,
     backgroundColor: '#F5FAF8',
   },
-  serviceAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+  imageContainer: {
+    width: 76,
+    height: 76,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#F3F4F6',
     marginRight: 12,
   },
-  serviceAvatarIcon: {
-    fontSize: 24,
+  serviceImage: {
+    width: '100%',
+    height: '100%',
   },
   taskInfo: {
     flex: 1,
@@ -477,24 +454,26 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   categoryTag: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 7,
     paddingVertical: 2,
-    borderRadius: 6,
+    borderRadius: 4,
   },
   categoryTagText: {
     fontSize: 10,
     fontWeight: '700',
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
   },
   taskName: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#101828',
+    color: '#111827',
+    letterSpacing: -0.2,
     marginBottom: 3,
+    lineHeight: 20,
   },
   taskDescription: {
     fontSize: 12,
-    color: '#667085',
+    color: '#4B5563',
     lineHeight: 18,
   },
   actionPillContainer: {
@@ -508,7 +487,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: theme.colors.primary,
     backgroundColor: '#FFFFFF',
-    minWidth: 74,
+    minWidth: 72,
     alignItems: 'center',
   },
   actionPillSelected: {
@@ -531,24 +510,24 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 12,
-    color: '#667085',
+    color: '#4B5563',
     fontSize: 14,
   },
   errorCard: {
     padding: 20,
     alignItems: 'center',
-    backgroundColor: '#FEF3F2',
-    borderColor: '#FECDCA',
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FEE2E2',
   },
   errorTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#D92D20',
+    color: '#DC2626',
     marginBottom: 6,
   },
   errorMessage: {
     fontSize: 13,
-    color: '#667085',
+    color: '#4B5563',
     textAlign: 'center',
     marginBottom: 16,
   },
@@ -559,12 +538,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#101828',
+    color: '#111827',
     marginBottom: 6,
   },
   emptyMessage: {
     fontSize: 13,
-    color: '#667085',
+    color: '#4B5563',
     textAlign: 'center',
     marginBottom: 16,
   },
@@ -579,7 +558,7 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#EAECF0',
+    borderTopColor: '#E5E7EB',
     paddingVertical: 14,
     paddingHorizontal: 16,
     ...theme.shadows.floatingBottom,
@@ -599,14 +578,15 @@ const styles = StyleSheet.create({
   selectedCountLabel: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#667085',
-    letterSpacing: 0.6,
+    color: '#6B7280',
+    letterSpacing: 0.8,
     marginBottom: 2,
+    textTransform: 'uppercase',
   },
   selectedCountValue: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#101828',
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
   },
   reviewButton: {
     width: 'auto',

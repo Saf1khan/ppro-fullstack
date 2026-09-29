@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   RefreshControl,
   SafeAreaView,
   ScrollView,
@@ -84,7 +85,6 @@ export default function AppHomeScreen() {
               <View style={styles.brandInfo}>
                 <View style={styles.badgeRow}>
                   <View style={styles.statusPill}>
-                    <Text style={styles.statusPillDot}>●</Text>
                     <Text style={styles.statusPillText}>ACTIVE PRO</Text>
                   </View>
                 </View>
@@ -109,17 +109,17 @@ export default function AppHomeScreen() {
               <View style={styles.metricsBar}>
                 <View style={styles.metricItem}>
                   <Text style={styles.metricValue}>{selectedTasks.length}</Text>
-                  <Text style={styles.metricLabel}>Services</Text>
+                  <Text style={styles.metricLabel}>SERVICES</Text>
                 </View>
                 <View style={styles.metricDivider} />
                 <View style={styles.metricItem}>
-                  <Text style={[styles.metricValue, { color: '#027A48' }]}>100%</Text>
-                  <Text style={styles.metricLabel}>Verified</Text>
+                  <Text style={[styles.metricValue, { color: '#059669' }]}>100%</Text>
+                  <Text style={styles.metricLabel}>VERIFIED</Text>
                 </View>
                 <View style={styles.metricDivider} />
                 <View style={styles.metricItem}>
                   <Text style={[styles.metricValue, { color: '#155C49' }]}>Active</Text>
-                  <Text style={styles.metricLabel}>Status</Text>
+                  <Text style={styles.metricLabel}>ACCOUNT</Text>
                 </View>
               </View>
 
@@ -164,13 +164,13 @@ export default function AppHomeScreen() {
                 <View>
                   <Text style={styles.sectionHeading}>Your Active Services</Text>
                   <Text style={styles.sectionSubheading}>
-                    {selectedTasks.length} {selectedTasks.length === 1 ? 'service' : 'services'} available for neighborhood booking
+                    {selectedTasks.length} {selectedTasks.length === 1 ? 'service' : 'services'} available for neighbourhood booking
                   </Text>
                 </View>
                 <TouchableOpacity
                   style={styles.editServicesButton}
                   onPress={() => router.push('/(onboarding)/task-selection')}
-                  activeOpacity={0.8}
+                  activeOpacity={0.82}
                 >
                   <Text style={styles.editServicesText}>
                     {selectedTasks.length > 0 ? 'Edit Services' : '+ Add Services'}
@@ -180,7 +180,6 @@ export default function AppHomeScreen() {
 
               {selectedTasks.length === 0 ? (
                 <Card variant="elevated" style={styles.emptyTasksCard}>
-                  <Text style={styles.emptyIcon}>🛠️</Text>
                   <Text style={styles.emptyTasksTitle}>No Services Added Yet</Text>
                   <Text style={styles.emptyTasksDescription}>
                     Pick the household maintenance, plumbing, electrical, or cleaning services you want to deliver in your neighborhood.
@@ -199,16 +198,13 @@ export default function AppHomeScreen() {
 
                     return (
                       <View key={task.id} style={styles.taskItemCard}>
-                        {/* Service Visual Avatar */}
-                        <View
-                          style={[
-                            styles.taskAvatar,
-                            { backgroundColor: taskVisual.accentBg },
-                          ]}
-                        >
-                          <Text style={styles.taskAvatarIcon}>
-                            {taskVisual.icon}
-                          </Text>
+                        {/* Real Photographic Service Thumbnail */}
+                        <View style={styles.imageContainer}>
+                          <Image
+                            source={{ uri: taskVisual.image }}
+                            style={styles.taskImage}
+                            resizeMode="cover"
+                          />
                         </View>
 
                         {/* Content */}
@@ -227,7 +223,7 @@ export default function AppHomeScreen() {
                                     { color: catVisual.textColor },
                                   ]}
                                 >
-                                  {task.category_name.toUpperCase()}
+                                  {taskVisual.badge}
                                 </Text>
                               </View>
                             ) : null}
@@ -269,7 +265,7 @@ export default function AppHomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FAFAF7',
+    backgroundColor: '#F9FAFB',
   },
   container: {
     paddingHorizontal: 16,
@@ -290,9 +286,9 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   avatarCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -300,44 +296,37 @@ const styles = StyleSheet.create({
   },
   avatarLetter: {
     color: '#FFFFFF',
-    fontSize: 22,
-    fontWeight: '800',
+    fontSize: 20,
+    fontWeight: '700',
   },
   brandInfo: {
     flex: 1,
   },
   badgeRow: {
     flexDirection: 'row',
-    marginBottom: 4,
+    marginBottom: 3,
   },
   statusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ECFDF3',
-    paddingHorizontal: 8,
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 7,
     paddingVertical: 2,
-    borderRadius: 9999,
-    gap: 4,
-  },
-  statusPillDot: {
-    color: '#027A48',
-    fontSize: 8,
+    borderRadius: 4,
   },
   statusPillText: {
-    color: '#027A48',
+    color: '#059669',
     fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5,
+    fontWeight: '700',
+    letterSpacing: 0.6,
   },
   title: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#101828',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111827',
     letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: 13,
-    color: '#667085',
+    color: '#4B5563',
   },
   metricsBar: {
     flexDirection: 'row',
@@ -348,7 +337,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#EAECF0',
+    borderColor: 'rgba(0, 0, 0, 0.04)',
     marginBottom: 20,
     ...theme.shadows.subtle,
   },
@@ -357,27 +346,28 @@ const styles = StyleSheet.create({
   },
   metricValue: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#101828',
+    fontWeight: '700',
+    color: '#111827',
   },
   metricLabel: {
-    fontSize: 11,
-    color: '#667085',
-    fontWeight: '600',
+    fontSize: 10,
+    color: '#6B7280',
+    fontWeight: '700',
+    letterSpacing: 0.6,
     marginTop: 2,
   },
   metricDivider: {
     width: 1,
     height: 28,
-    backgroundColor: '#EAECF0',
+    backgroundColor: '#E5E7EB',
   },
   card: {
     padding: 20,
-    borderRadius: 18,
+    borderRadius: 16,
     marginBottom: 24,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#F2F4F7',
+    borderColor: 'rgba(0, 0, 0, 0.04)',
     ...theme.shadows.card,
   },
   cardHeaderRow: {
@@ -387,24 +377,25 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#F2F4F7',
+    borderBottomColor: '#F3F4F6',
   },
   cardSectionTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#101828',
+    color: '#111827',
+    letterSpacing: -0.2,
   },
   idBadge: {
-    backgroundColor: '#E8F8F2',
+    backgroundColor: '#E8F5F1',
     paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
   idBadgeText: {
     fontSize: 10,
-    fontWeight: '800',
-    color: theme.colors.primary,
-    letterSpacing: 0.5,
+    fontWeight: '700',
+    color: '#155C49',
+    letterSpacing: 0.6,
   },
   detailRow: {
     flexDirection: 'row',
@@ -414,12 +405,12 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 13,
-    color: '#667085',
+    color: '#6B7280',
     fontWeight: '500',
   },
   detailValue: {
     fontSize: 13,
-    color: '#101828',
+    color: '#111827',
     fontWeight: '600',
     flexShrink: 1,
     textAlign: 'right',
@@ -436,23 +427,23 @@ const styles = StyleSheet.create({
   },
   sectionHeading: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#101828',
+    fontWeight: '700',
+    color: '#111827',
     letterSpacing: -0.3,
   },
   sectionSubheading: {
     fontSize: 13,
-    color: '#667085',
+    color: '#4B5563',
     marginTop: 2,
   },
   editServicesButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: '#E8F8F2',
+    backgroundColor: '#E8F5F1',
   },
   editServicesText: {
-    color: theme.colors.primary,
+    color: '#155C49',
     fontSize: 12,
     fontWeight: '700',
   },
@@ -461,21 +452,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 24,
   },
-  emptyIcon: {
-    fontSize: 32,
-    marginBottom: 8,
-  },
   emptyTasksTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#101828',
+    color: '#111827',
     marginBottom: 4,
   },
   emptyTasksDescription: {
     fontSize: 13,
-    color: '#667085',
+    color: '#4B5563',
     textAlign: 'center',
-    lineHeight: 19,
+    lineHeight: 20,
     marginBottom: 16,
   },
   browseButton: {
@@ -491,21 +478,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: '#F2F4F7',
-    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.04)',
+    padding: 12,
     ...theme.shadows.card,
   },
-  taskAvatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+  imageContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 10,
+    overflow: 'hidden',
+    backgroundColor: '#F3F4F6',
     marginRight: 12,
   },
-  taskAvatarIcon: {
-    fontSize: 22,
+  taskImage: {
+    width: '100%',
+    height: '100%',
   },
   taskItemInfo: {
     flex: 1,
@@ -517,36 +505,37 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   categoryBadge: {
-    paddingHorizontal: 7,
+    paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 6,
+    borderRadius: 4,
   },
   categoryBadgeText: {
     fontSize: 9,
     fontWeight: '700',
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
   },
   offeredBadge: {
-    backgroundColor: '#ECFDF3',
+    backgroundColor: '#ECFDF5',
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 6,
+    borderRadius: 4,
   },
   offeredBadgeText: {
-    color: '#027A48',
+    color: '#059669',
     fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 0.5,
+    fontWeight: '700',
+    letterSpacing: 0.6,
   },
   taskItemName: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#101828',
+    color: '#111827',
     marginBottom: 2,
+    letterSpacing: -0.2,
   },
   taskItemDescription: {
     fontSize: 12,
-    color: '#667085',
+    color: '#4B5563',
     lineHeight: 17,
   },
   logoutButton: {
@@ -560,7 +549,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 12,
-    color: '#667085',
+    color: '#4B5563',
     fontSize: 14,
   },
 });

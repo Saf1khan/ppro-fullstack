@@ -1,34 +1,36 @@
 /**
- * PadosiPro Color Palette Tokens
- * Reference values observed from PadosiPro design system.
+ * PadosiPro Premium Color Palette
+ * Designed for optical comfort and reduced eye-strain.
  */
 export const colors = {
-  // Primary brand / action
+  // Primary brand / action (Forest Emerald)
   primary: '#155C49',
   primaryHover: '#104738',
-  primaryLight: '#E8F2EE',
+  primaryLight: '#E8F5F1',
   primaryDisabled: '#93B2A9',
 
-  // Text
-  textPrimary: '#101828',
-  textSecondary: '#667085',
+  // Anti-Generic Typography Colors (Never pure #000)
+  textPrimary: '#111827',
+  textSecondary: '#4B5563',
+  textMuted: '#6B7280',
   textInverse: '#FFFFFF',
 
-  // Canvas & Surfaces
-  background: '#FAFAF7',
+  // Canvas & Surfaces (Soft #F9FAFB canvas)
+  background: '#F9FAFB',
   surface: '#FFFFFF',
 
-  // Borders & Dividers
-  border: '#E4E7EC',
+  // Subtle Borders
+  border: '#E5E7EB',
+  borderLight: 'rgba(0, 0, 0, 0.05)',
   borderFocus: '#155C49',
 
   // Feedback states
-  error: '#D92D20',
-  errorLight: '#FEF3F2',
-  success: '#079455',
-  successLight: '#ECFDF3',
-  warning: '#F79009',
-  warningLight: '#FFFAEB',
+  error: '#DC2626',
+  errorLight: '#FEF2F2',
+  success: '#059669',
+  successLight: '#ECFDF5',
+  warning: '#D97706',
+  warningLight: '#FFFBEB',
 } as const;
 
 export type Colors = typeof colors;

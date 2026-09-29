@@ -101,7 +101,6 @@ export default function LoginScreen() {
           <Card variant="elevated" style={styles.authCard}>
             {/* Brand Header */}
             <View style={styles.brandBadge}>
-              <Text style={styles.brandBadgeDot}>●</Text>
               <Text style={styles.brandBadgeText}>PADOSIPRO PARTNER</Text>
             </View>
 
@@ -197,7 +196,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   keyboardContainer: {
     flex: 1,
-    backgroundColor: '#FAFAF7',
+    backgroundColor: '#F9FAFB',
   },
   scrollContent: {
     flexGrow: 1,
@@ -208,37 +207,31 @@ const styles = StyleSheet.create({
   },
   centerContainer: {
     width: '100%',
-    maxWidth: 460,
+    maxWidth: 440,
     alignSelf: 'center',
   },
   authCard: {
-    padding: 28,
-    borderRadius: 20,
+    padding: 32,
+    borderRadius: 16,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#F2F4F7',
+    borderColor: 'rgba(0, 0, 0, 0.04)',
     ...theme.shadows.card,
   },
   brandBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: '#E8F8F2',
+    backgroundColor: '#E8F5F1',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 9999,
+    borderRadius: 6,
     marginBottom: 16,
-    gap: 6,
-  },
-  brandBadgeDot: {
-    fontSize: 8,
-    color: theme.colors.primary,
   },
   brandBadgeText: {
-    color: theme.colors.primary,
+    color: '#155C49',
     fontSize: 11,
     fontWeight: '700',
-    letterSpacing: 0.6,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
   },
   header: {
     marginBottom: 24,
@@ -246,15 +239,15 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     lineHeight: 32,
-    fontWeight: '800',
-    color: '#101828',
+    fontWeight: '700',
+    color: '#111827',
     marginBottom: 6,
-    letterSpacing: -0.4,
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 14,
     lineHeight: 22,
-    color: '#667085',
+    color: '#4B5563',
   },
   infoCard: {
     backgroundColor: '#ECFDF3',

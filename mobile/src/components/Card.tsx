@@ -22,12 +22,12 @@ export const Card: React.FC<CardProps> = ({
 const styles = StyleSheet.create({
   base: {
     backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.xl, // 16px modern rounding
-    padding: theme.spacing.xl, // 20px comfortable padding
+    borderRadius: 16,
+    padding: 20,
   },
   elevated: {
     borderWidth: 1,
-    borderColor: '#F2F4F7',
+    borderColor: 'rgba(0, 0, 0, 0.04)',
     ...theme.shadows.card,
   },
   outlined: {

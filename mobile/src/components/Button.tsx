@@ -45,7 +45,7 @@ export const Button: React.FC<ButtonProps> = ({
 
   return (
     <TouchableOpacity
-      activeOpacity={0.85}
+      activeOpacity={0.82}
       disabled={isDisabled}
       style={containerStyles as ViewStyle[]}
       accessibilityRole="button"
@@ -66,7 +66,7 @@ export const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: 14,
+    borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -75,10 +75,10 @@ const styles = StyleSheet.create({
   primary: {
     backgroundColor: theme.colors.primary,
     shadowColor: theme.colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.16,
+    shadowRadius: 8,
+    elevation: 2,
   },
   primaryDisabled: {
     backgroundColor: theme.colors.primaryDisabled,
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
   outline: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
-    borderColor: '#E4E7EC',
+    borderColor: '#E5E7EB',
   },
   ghost: {
     backgroundColor: 'transparent',
@@ -100,49 +100,49 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   size_sm: {
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.md,
-    minHeight: 38,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    minHeight: 36,
     borderRadius: 10,
   },
   size_md: {
-    paddingVertical: 14,
-    paddingHorizontal: theme.spacing['2xl'],
-    minHeight: 52,
+    paddingVertical: 13,
+    paddingHorizontal: 22,
+    minHeight: 48,
   },
   size_lg: {
-    paddingVertical: 16,
-    paddingHorizontal: theme.spacing['2xl'],
-    minHeight: 56,
+    paddingVertical: 15,
+    paddingHorizontal: 24,
+    minHeight: 52,
   },
   textBase: {
-    fontWeight: theme.typography.fontWeight.bold,
+    fontWeight: '700',
     textAlign: 'center',
-    letterSpacing: 0.2,
+    letterSpacing: 0.3,
   },
   primaryText: {
-    color: theme.colors.textInverse,
-    fontSize: theme.typography.fontSize.body,
+    color: '#FFFFFF',
+    fontSize: 15,
   },
   secondaryText: {
     color: theme.colors.primary,
-    fontSize: theme.typography.fontSize.body,
+    fontSize: 15,
   },
   outlineText: {
-    color: theme.colors.textPrimary,
-    fontSize: theme.typography.fontSize.body,
+    color: '#111827',
+    fontSize: 15,
   },
   ghostText: {
     color: theme.colors.primary,
-    fontSize: theme.typography.fontSize.body,
+    fontSize: 15,
   },
   text_size_sm: {
-    fontSize: theme.typography.fontSize.sm,
+    fontSize: 13,
   },
   text_size_md: {
-    fontSize: theme.typography.fontSize.body, // 16px
+    fontSize: 15,
   },
   text_size_lg: {
-    fontSize: theme.typography.fontSize.subheading,
+    fontSize: 16,
   },
 });

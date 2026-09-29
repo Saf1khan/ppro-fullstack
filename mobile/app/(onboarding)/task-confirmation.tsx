@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -81,12 +82,11 @@ export default function TaskConfirmationScreen() {
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.badge}>
-              <Text style={styles.badgeDot}>●</Text>
               <Text style={styles.badgeText}>FINAL STEP · REVIEW & CONFIRM</Text>
             </View>
             <Text style={styles.title}>Confirm Your Services</Text>
             <Text style={styles.subtitle}>
-              Review your {selectedIds.length} chosen {selectedIds.length === 1 ? 'service' : 'services'} before publishing them to neighborhood clients.
+              Review your {selectedIds.length} chosen {selectedIds.length === 1 ? 'service' : 'services'} before publishing them to neighbourhood clients.
             </Text>
           </View>
 
@@ -115,21 +115,21 @@ export default function TaskConfirmationScreen() {
             </Card>
           ) : (
             <>
-              {/* Summary Stats Pill */}
+              {/* Summary Stats Bar */}
               <View style={styles.summaryBar}>
                 <View style={styles.summaryItem}>
                   <Text style={styles.summaryValue}>{selectedIds.length}</Text>
-                  <Text style={styles.summaryLabel}>Total Services</Text>
+                  <Text style={styles.summaryLabel}>TOTAL SERVICES</Text>
                 </View>
                 <View style={styles.summaryDivider} />
                 <View style={styles.summaryItem}>
                   <Text style={styles.summaryValue}>{groupedSelectedTasks.length}</Text>
-                  <Text style={styles.summaryLabel}>Categories</Text>
+                  <Text style={styles.summaryLabel}>CATEGORIES</Text>
                 </View>
                 <View style={styles.summaryDivider} />
                 <View style={styles.summaryItem}>
-                  <Text style={[styles.summaryValue, { color: '#027A48' }]}>Instant</Text>
-                  <Text style={styles.summaryLabel}>Activation</Text>
+                  <Text style={[styles.summaryValue, { color: '#059669' }]}>Active</Text>
+                  <Text style={styles.summaryLabel}>VERIFIED STATUS</Text>
                 </View>
               </View>
 
@@ -139,10 +139,7 @@ export default function TaskConfirmationScreen() {
                 return (
                   <View key={gIdx} style={styles.categorySection}>
                     <View style={styles.categoryHeader}>
-                      <View style={styles.categoryTitleRow}>
-                        <Text style={styles.categoryIcon}>{catVisual.icon}</Text>
-                        <Text style={styles.categoryTitle}>{group.categoryName}</Text>
-                      </View>
+                      <Text style={styles.categoryTitle}>{group.categoryName}</Text>
                       <View
                         style={[
                           styles.countBadge,
@@ -165,15 +162,12 @@ export default function TaskConfirmationScreen() {
                         const taskVisual = getTaskVisual(task.name);
                         return (
                           <View key={task.id} style={styles.taskCard}>
-                            <View
-                              style={[
-                                styles.taskAvatar,
-                                { backgroundColor: taskVisual.accentBg },
-                              ]}
-                            >
-                              <Text style={styles.taskAvatarIcon}>
-                                {taskVisual.icon}
-                              </Text>
+                            <View style={styles.imageContainer}>
+                              <Image
+                                source={{ uri: taskVisual.image }}
+                                style={styles.taskImage}
+                                resizeMode="cover"
+                              />
                             </View>
                             <View style={styles.taskDetails}>
                               <Text style={styles.taskName}>{task.name}</Text>
@@ -222,7 +216,7 @@ export default function TaskConfirmationScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FAFAF7',
+    backgroundColor: '#F9FAFB',
   },
   container: {
     paddingHorizontal: 16,
@@ -238,38 +232,32 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: '#E8F8F2',
+    backgroundColor: '#E8F5F1',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 9999,
-    marginBottom: 10,
-    gap: 6,
-  },
-  badgeDot: {
-    fontSize: 8,
-    color: theme.colors.primary,
+    borderRadius: 6,
+    marginBottom: 8,
   },
   badgeText: {
-    color: theme.colors.primary,
+    color: '#155C49',
     fontSize: 11,
     fontWeight: '700',
-    letterSpacing: 0.6,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
   },
   title: {
     fontSize: 26,
     lineHeight: 32,
-    fontWeight: '800',
-    color: '#101828',
+    fontWeight: '700',
+    color: '#111827',
+    letterSpacing: -0.5,
     marginBottom: 4,
-    letterSpacing: -0.4,
   },
   subtitle: {
     fontSize: 14,
-    color: '#667085',
-    lineHeight: 20,
+    color: '#4B5563',
+    lineHeight: 22,
   },
   summaryBar: {
     flexDirection: 'row',
@@ -280,7 +268,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#EAECF0',
+    borderColor: 'rgba(0, 0, 0, 0.04)',
     marginBottom: 24,
     ...theme.shadows.subtle,
   },
@@ -289,19 +277,20 @@ const styles = StyleSheet.create({
   },
   summaryValue: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#101828',
+    fontWeight: '700',
+    color: '#111827',
   },
   summaryLabel: {
-    fontSize: 11,
-    color: '#667085',
-    fontWeight: '600',
+    fontSize: 10,
+    color: '#6B7280',
+    fontWeight: '700',
+    letterSpacing: 0.6,
     marginTop: 2,
   },
   summaryDivider: {
     width: 1,
     height: 28,
-    backgroundColor: '#EAECF0',
+    backgroundColor: '#E5E7EB',
   },
   categorySection: {
     marginBottom: 24,
@@ -313,18 +302,11 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     paddingHorizontal: 4,
   },
-  categoryTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  categoryIcon: {
-    fontSize: 18,
-  },
   categoryTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#101828',
+    color: '#111827',
+    letterSpacing: -0.2,
   },
   countBadge: {
     paddingHorizontal: 10,
@@ -344,20 +326,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#F2F4F7',
-    padding: 14,
+    borderColor: 'rgba(0, 0, 0, 0.04)',
+    padding: 12,
     ...theme.shadows.subtle,
   },
-  taskAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+  imageContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 10,
+    overflow: 'hidden',
+    backgroundColor: '#F3F4F6',
     marginRight: 12,
   },
-  taskAvatarIcon: {
-    fontSize: 22,
+  taskImage: {
+    width: '100%',
+    height: '100%',
   },
   taskDetails: {
     flex: 1,
@@ -366,24 +349,25 @@ const styles = StyleSheet.create({
   taskName: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#101828',
+    color: '#111827',
     marginBottom: 2,
+    letterSpacing: -0.2,
   },
   taskDescription: {
     fontSize: 12,
-    color: '#667085',
+    color: '#4B5563',
     lineHeight: 17,
   },
   verifiedCheck: {
     width: 26,
     height: 26,
     borderRadius: 13,
-    backgroundColor: '#E8F8F2',
+    backgroundColor: '#E8F5F1',
     alignItems: 'center',
     justifyContent: 'center',
   },
   verifiedCheckText: {
-    color: theme.colors.primary,
+    color: '#155C49',
     fontSize: 14,
     fontWeight: '800',
   },
@@ -405,7 +389,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    color: '#667085',
+    color: '#4B5563',
   },
   emptyCard: {
     padding: 28,
@@ -414,12 +398,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#101828',
+    color: '#111827',
     marginBottom: 6,
   },
   emptySubtitle: {
     fontSize: 13,
-    color: '#667085',
+    color: '#4B5563',
     textAlign: 'center',
     marginBottom: 20,
   },
@@ -427,15 +411,15 @@ const styles = StyleSheet.create({
     minWidth: 180,
   },
   errorBanner: {
-    backgroundColor: '#FEF3F2',
+    backgroundColor: '#FEF2F2',
     borderRadius: 12,
     padding: 14,
     marginBottom: 20,
     borderLeftWidth: 4,
-    borderLeftColor: '#D92D20',
+    borderLeftColor: '#DC2626',
   },
   errorBannerText: {
-    color: '#B42318',
+    color: '#B91C1C',
     fontSize: 13,
     fontWeight: '600',
   },
