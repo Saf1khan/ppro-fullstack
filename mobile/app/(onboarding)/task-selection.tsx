@@ -112,6 +112,7 @@ export default function TaskSelectionScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.badge}>
+            <View style={styles.badgePulseDot} />
             <Text style={styles.badgeText}>STEP 2 OF 2 · SERVICE CATALOGUE</Text>
           </View>
           <Text style={styles.title}>Select Your Services</Text>
@@ -123,6 +124,7 @@ export default function TaskSelectionScreen() {
         {/* Search Input Bar */}
         <View style={styles.searchContainer}>
           <View style={styles.searchInner}>
+            <Text style={styles.searchIcon}>🔍</Text>
             <TextInput
               style={styles.searchInput}
               placeholder="Search services (e.g. plumbing, degreasing, AC)..."
@@ -152,12 +154,26 @@ export default function TaskSelectionScreen() {
             contentContainerStyle={styles.categoryChipsList}
             renderItem={({ item }) => {
               const isActive = activeCategorySlug === item.slug;
+              const catVisual = getCategoryVisual(item.slug);
+
               return (
                 <TouchableOpacity
                   style={[styles.categoryChip, isActive && styles.activeCategoryChip]}
                   onPress={() => setActiveCategorySlug(item.slug)}
                   activeOpacity={0.82}
                 >
+                  <View
+                    style={[
+                      styles.chipDot,
+                      {
+                        backgroundColor: isActive
+                          ? '#FFFFFF'
+                          : item.slug === 'all'
+                          ? '#10B981'
+                          : catVisual.dotColor,
+                      },
+                    ]}
+                  />
                   <Text
                     style={[
                       styles.categoryChipText,
@@ -211,7 +227,6 @@ export default function TaskSelectionScreen() {
             renderItem={({ item }) => {
               const isSelected = selectedTaskIds.has(item.id);
               const taskVisual = getTaskVisual(item.name);
-              const catVisual = getCategoryVisual(item.category_name);
 
               return (
                 <TouchableOpacity
@@ -233,22 +248,39 @@ export default function TaskSelectionScreen() {
                       />
                     </View>
 
-                    {/* Task Info with Micro-Typography */}
+                    {/* Task Info with Vibrant Two-Tone Tag UI */}
                     <View style={styles.taskInfo}>
                       <View style={styles.tagRow}>
+                        {/* Two-Tone Category Tag with Micro-Dot Accent */}
                         <View
                           style={[
                             styles.categoryTag,
-                            { backgroundColor: catVisual.badgeBg },
+                            {
+                              backgroundColor: taskVisual.accentBg,
+                              borderColor: taskVisual.borderColor,
+                            },
                           ]}
                         >
+                          <View
+                            style={[
+                              styles.tagDot,
+                              { backgroundColor: taskVisual.dotColor },
+                            ]}
+                          />
                           <Text
                             style={[
                               styles.categoryTagText,
-                              { color: catVisual.textColor },
+                              { color: taskVisual.textColor },
                             ]}
                           >
                             {taskVisual.badge}
+                          </Text>
+                        </View>
+
+                        {/* Rating & Metric Micro-Pill */}
+                        <View style={styles.ratingTag}>
+                          <Text style={styles.ratingTagText}>
+                            {taskVisual.tagSecondary}
                           </Text>
                         </View>
                       </View>
@@ -323,12 +355,23 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
   },
   badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-start',
     backgroundColor: '#E8F5F1',
+    borderWidth: 1,
+    borderColor: '#C6EADE',
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
+    paddingVertical: 5,
+    borderRadius: 9999,
     marginBottom: 8,
+    gap: 6,
+  },
+  badgePulseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#155C49',
   },
   badgeText: {
     color: '#155C49',
@@ -365,6 +408,11 @@ const styles = StyleSheet.create({
     minHeight: 46,
     ...theme.shadows.subtle,
   },
+  searchIcon: {
+    fontSize: 15,
+    marginRight: 8,
+    opacity: 0.6,
+  },
   searchInput: {
     flex: 1,
     height: '100%',
@@ -388,12 +436,15 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   categoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E5E7EB',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 9999,
+    gap: 6,
     ...theme.shadows.subtle,
   },
   activeCategoryChip: {
@@ -404,6 +455,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 2,
+  },
+  chipDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   categoryChipText: {
     fontSize: 13,
@@ -416,7 +472,7 @@ const styles = StyleSheet.create({
   },
   tasksList: {
     paddingHorizontal: 16,
-    paddingBottom: 140, // 140px bottom padding for floating bottom bar clearance
+    paddingBottom: 140,
     gap: 12,
   },
   taskCard: {
@@ -434,8 +490,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5FAF8',
   },
   imageContainer: {
-    width: 76,
-    height: 76,
+    width: 78,
+    height: 78,
     borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: '#F3F4F6',
@@ -451,17 +507,39 @@ const styles = StyleSheet.create({
   },
   tagRow: {
     flexDirection: 'row',
-    marginBottom: 4,
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 5,
   },
   categoryTag: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 9999,
+    borderWidth: 1,
+    gap: 5,
+  },
+  tagDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
   },
   categoryTagText: {
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.6,
+  },
+  ratingTag: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 7,
+    paddingVertical: 2.5,
+    borderRadius: 9999,
+  },
+  ratingTagText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#4B5563',
   },
   taskName: {
     fontSize: 15,

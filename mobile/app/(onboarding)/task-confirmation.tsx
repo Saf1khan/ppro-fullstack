@@ -82,6 +82,7 @@ export default function TaskConfirmationScreen() {
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.badge}>
+              <View style={styles.badgePulseDot} />
               <Text style={styles.badgeText}>FINAL STEP · REVIEW & CONFIRM</Text>
             </View>
             <Text style={styles.title}>Confirm Your Services</Text>
@@ -143,9 +144,18 @@ export default function TaskConfirmationScreen() {
                       <View
                         style={[
                           styles.countBadge,
-                          { backgroundColor: catVisual.badgeBg },
+                          {
+                            backgroundColor: catVisual.badgeBg,
+                            borderColor: catVisual.borderColor,
+                          },
                         ]}
                       >
+                        <View
+                          style={[
+                            styles.chipDot,
+                            { backgroundColor: catVisual.dotColor },
+                          ]}
+                        />
                         <Text
                           style={[
                             styles.countBadgeText,
@@ -170,6 +180,32 @@ export default function TaskConfirmationScreen() {
                               />
                             </View>
                             <View style={styles.taskDetails}>
+                              <View style={styles.tagRow}>
+                                <View
+                                  style={[
+                                    styles.categoryTag,
+                                    {
+                                      backgroundColor: taskVisual.accentBg,
+                                      borderColor: taskVisual.borderColor,
+                                    },
+                                  ]}
+                                >
+                                  <View
+                                    style={[
+                                      styles.tagDot,
+                                      { backgroundColor: taskVisual.dotColor },
+                                    ]}
+                                  />
+                                  <Text
+                                    style={[
+                                      styles.categoryTagText,
+                                      { color: taskVisual.textColor },
+                                    ]}
+                                  >
+                                    {taskVisual.badge}
+                                  </Text>
+                                </View>
+                              </View>
                               <Text style={styles.taskName}>{task.name}</Text>
                               <Text
                                 style={styles.taskDescription}
@@ -232,12 +268,23 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-start',
     backgroundColor: '#E8F5F1',
+    borderWidth: 1,
+    borderColor: '#C6EADE',
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
+    paddingVertical: 5,
+    borderRadius: 9999,
     marginBottom: 8,
+    gap: 6,
+  },
+  badgePulseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#155C49',
   },
   badgeText: {
     color: '#155C49',
@@ -309,9 +356,18 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   countBadge: {
-    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 9,
     paddingVertical: 3,
     borderRadius: 9999,
+    borderWidth: 1,
+    gap: 5,
+  },
+  chipDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
   },
   countBadgeText: {
     fontSize: 11,
@@ -331,8 +387,8 @@ const styles = StyleSheet.create({
     ...theme.shadows.subtle,
   },
   imageContainer: {
-    width: 60,
-    height: 60,
+    width: 64,
+    height: 64,
     borderRadius: 10,
     overflow: 'hidden',
     backgroundColor: '#F3F4F6',
@@ -345,6 +401,29 @@ const styles = StyleSheet.create({
   taskDetails: {
     flex: 1,
     marginRight: 12,
+  },
+  tagRow: {
+    flexDirection: 'row',
+    marginBottom: 4,
+  },
+  categoryTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 7,
+    paddingVertical: 2.5,
+    borderRadius: 9999,
+    borderWidth: 1,
+    gap: 4,
+  },
+  tagDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+  },
+  categoryTagText: {
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 0.6,
   },
   taskName: {
     fontSize: 14,

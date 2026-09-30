@@ -92,6 +92,20 @@ function NavigationGuard() {
 }
 
 export default function RootLayout() {
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const fontId = 'google-font-plus-jakarta';
+      if (!document.getElementById(fontId)) {
+        const link = document.createElement('link');
+        link.id = fontId;
+        link.rel = 'stylesheet';
+        link.href =
+          'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap';
+        document.head.appendChild(link);
+      }
+    }
+  }, []);
+
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" backgroundColor={theme.colors.background} />

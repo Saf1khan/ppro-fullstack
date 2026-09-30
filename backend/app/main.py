@@ -13,7 +13,12 @@ from app.schemas.health import HealthResponse
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    # Lifespan startup
+    # Lifespan startup: seed demo user if not present
+    try:
+        from seed_demo_user import seed_demo_user
+        await seed_demo_user()
+    except Exception as e:
+        print(f"Startup seed notice: {e}")
     yield
     # Lifespan shutdown
 

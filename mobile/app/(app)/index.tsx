@@ -210,25 +210,32 @@ export default function AppHomeScreen() {
                         {/* Content */}
                         <View style={styles.taskItemInfo}>
                           <View style={styles.taskItemHeader}>
-                            {task.category_name ? (
+                            <View
+                              style={[
+                                styles.categoryBadge,
+                                {
+                                  backgroundColor: taskVisual.accentBg,
+                                  borderColor: taskVisual.borderColor,
+                                },
+                              ]}
+                            >
                               <View
                                 style={[
-                                  styles.categoryBadge,
-                                  { backgroundColor: catVisual.badgeBg },
+                                  styles.tagDot,
+                                  { backgroundColor: taskVisual.dotColor },
+                                ]}
+                              />
+                              <Text
+                                style={[
+                                  styles.categoryBadgeText,
+                                  { color: taskVisual.textColor },
                                 ]}
                               >
-                                <Text
-                                  style={[
-                                    styles.categoryBadgeText,
-                                    { color: catVisual.textColor },
-                                  ]}
-                                >
-                                  {taskVisual.badge}
-                                </Text>
-                              </View>
-                            ) : null}
+                                {taskVisual.badge}
+                              </Text>
+                            </View>
                             <View style={styles.offeredBadge}>
-                              <Text style={styles.offeredBadgeText}>OFFERED</Text>
+                              <Text style={styles.offeredBadgeText}>{taskVisual.tagSecondary}</Text>
                             </View>
                           </View>
 
@@ -505,9 +512,18 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   categoryBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 7,
+    paddingVertical: 2.5,
+    borderRadius: 9999,
+    borderWidth: 1,
+    gap: 4,
+  },
+  tagDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
   },
   categoryBadgeText: {
     fontSize: 9,
@@ -515,16 +531,16 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
   },
   offeredBadge: {
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#F3F4F6',
     paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingVertical: 2.5,
+    borderRadius: 9999,
   },
   offeredBadgeText: {
-    color: '#059669',
+    color: '#4B5563',
     fontSize: 9,
     fontWeight: '700',
-    letterSpacing: 0.6,
+    letterSpacing: 0.5,
   },
   taskItemName: {
     fontSize: 14,
