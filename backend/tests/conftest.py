@@ -54,6 +54,18 @@ async def clean_db_tables():
         await session.commit()
 
 
+@pytest.fixture(scope="session", autouse=True)
+def reseed_demo_user_after_all_tests():
+    """Reseeds the demo user once the entire test suite completes so the app is always immediately testable."""
+    yield
+    try:
+        import asyncio
+        from seed_demo_user import seed_demo_user
+        asyncio.run(seed_demo_user())
+    except Exception as e:
+        pass
+
+
 @pytest.fixture(autouse=True)
 def captured_emails(monkeypatch) -> List[Dict[str, str]]:
     """
