@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button, Card, Input } from '../../src/components';
+import { BrandLogo, Button, Card, Input } from '../../src/components';
 import { authApi, formatApiErrorMessage } from '../../src/services/api';
 import { theme } from '../../src/theme';
 
@@ -98,13 +98,13 @@ export default function RegisterScreen() {
       >
         <View style={styles.centerContainer}>
           <Card variant="elevated" style={styles.authCard}>
-            {/* Header Badge */}
-            <View style={styles.brandBadge}>
-              <Text style={styles.brandBadgeText}>JOIN PADOSIPRO</Text>
+            {/* Brand Logo & Header */}
+            <View style={styles.brandHeaderContainer}>
+              <BrandLogo size="lg" withText tagline="Verified Partner Onboarding" />
             </View>
 
             <View style={styles.header}>
-              <Text style={styles.title}>Create Account</Text>
+              <Text style={styles.title}>Create Pro Account</Text>
               <Text style={styles.subtitle}>
                 Start offering verified home and local services in your neighborhood.
               </Text>
@@ -205,42 +205,37 @@ const styles = StyleSheet.create({
   },
   authCard: {
     padding: 32,
-    borderRadius: 16,
+    borderRadius: 20,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.04)',
+    borderColor: 'rgba(0, 0, 0, 0.05)',
     ...theme.shadows.card,
   },
-  brandBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#E8F5F1',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    marginBottom: 16,
-  },
-  brandBadgeText: {
-    color: '#155C49',
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
+  brandHeaderContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
   },
   header: {
     marginBottom: 24,
+    alignItems: 'center',
   },
   title: {
-    fontSize: 26,
-    lineHeight: 32,
-    fontWeight: '700',
-    color: '#111827',
+    fontSize: 24,
+    lineHeight: 30,
+    fontWeight: '800',
+    color: '#0F172A',
     marginBottom: 6,
-    letterSpacing: -0.5,
+    letterSpacing: -0.6,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 14,
     lineHeight: 22,
-    color: '#4B5563',
+    color: '#64748B',
+    textAlign: 'center',
   },
   errorCard: {
     backgroundColor: '#FEF3F2',

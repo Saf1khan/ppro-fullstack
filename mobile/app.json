@@ -6,14 +6,17 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "padosipro",
+    "icon": "./assets/icon.png",
     "splash": {
+      "image": "./assets/logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FAFAF7"
+      "backgroundColor": "#0F1E19"
     },
     "android": {
       "package": "com.padosipro.app",
       "adaptiveIcon": {
-        "backgroundColor": "#155C49"
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#0F1E19"
       }
     },
     "plugins": [

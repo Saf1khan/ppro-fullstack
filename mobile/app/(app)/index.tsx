@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button, Card } from '../../src/components';
+import { BrandLogo, Button, Card } from '../../src/components';
 import { getCategoryVisual, getTaskVisual } from '../../src/constants/serviceIcons';
 import { useAuth } from '../../src/context/AuthContext';
 import { profileApi, tasksApi } from '../../src/services/api';
@@ -76,6 +76,18 @@ export default function AppHomeScreen() {
         }
       >
         <View style={styles.centerContainer}>
+          {/* Top Navigation Brand Bar */}
+          <View style={styles.topBrandBar}>
+            <BrandLogo size="sm" withText horizontal tagline="Partner Dashboard" />
+            <TouchableOpacity
+              style={styles.topLogoutButton}
+              onPress={handleLogout}
+              disabled={loggingOut}
+            >
+              <Text style={styles.topLogoutText}>{loggingOut ? '...' : 'Sign Out'}</Text>
+            </TouchableOpacity>
+          </View>
+
           {/* Header Banner */}
           <View style={styles.header}>
             <View style={styles.brandRow}>
@@ -283,6 +295,32 @@ const styles = StyleSheet.create({
     maxWidth: 680,
     width: '100%',
     alignSelf: 'center',
+  },
+  topBrandBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
+    marginBottom: 16,
+    ...theme.shadows.subtle,
+  },
+  topLogoutButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  topLogoutText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#4B5563',
   },
   header: {
     marginBottom: 16,

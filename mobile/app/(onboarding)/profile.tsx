@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button, Card, Input } from '../../src/components';
+import { BrandLogo, Button, Card, Input } from '../../src/components';
 import { useAuth } from '../../src/context/AuthContext';
 import { formatApiErrorMessage, profileApi } from '../../src/services/api';
 import { theme } from '../../src/theme';
@@ -88,12 +88,17 @@ export default function ProfileOnboardingScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.centerContainer}>
+            {/* Top Brand Bar */}
+            <View style={styles.topBrandBar}>
+              <BrandLogo size="sm" withText horizontal tagline="Provider Onboarding" />
+            </View>
+
             {/* Header */}
             <View style={styles.header}>
               <View style={styles.badge}>
-                <Text style={styles.badgeText}>STEP 1 OF 2 · PROVIDER SETUP</Text>
+                <Text style={styles.badgeText}>STEP 1 OF 2 · PROFILE SETUP</Text>
               </View>
-              <Text style={styles.title}>Complete Profile</Text>
+              <Text style={styles.title}>Complete Your Profile</Text>
               <Text style={styles.subtitle}>
                 Tell us who you are so local customers can discover and book your services.
               </Text>
@@ -203,6 +208,19 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 520,
     alignSelf: 'center',
+  },
+  topBrandBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
+    marginBottom: 20,
+    ...theme.shadows.subtle,
   },
   header: {
     marginBottom: 20,

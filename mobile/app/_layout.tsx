@@ -3,6 +3,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { BrandLogo } from '../src/components';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { theme } from '../src/theme';
 
@@ -41,8 +42,8 @@ function NavigationGuard() {
   if (status === 'initializing') {
     return (
       <View style={styles.splashContainer}>
-        <Text style={styles.brandTitle}>PadosiPro</Text>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <BrandLogo size="xl" withText tagline="Verified Neighborhood Services" />
+        <ActivityIndicator size="small" color={theme.colors.primary} style={styles.splashLoader} />
       </View>
     );
   }
@@ -129,5 +130,8 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
     marginBottom: theme.spacing.lg,
     letterSpacing: -0.5,
+  },
+  splashLoader: {
+    marginTop: 28,
   },
 });

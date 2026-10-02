@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button, Card } from '../../src/components';
+import { BrandLogo, Button, Card } from '../../src/components';
 import { getCategoryVisual, getTaskVisual } from '../../src/constants/serviceIcons';
 import { formatApiErrorMessage, tasksApi } from '../../src/services/api';
 import { theme } from '../../src/theme';
@@ -109,11 +109,19 @@ export default function TaskSelectionScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.contentWrapper}>
+        {/* Top Brand Bar */}
+        <View style={styles.topBrandBar}>
+          <BrandLogo size="sm" withText horizontal tagline="Service Catalogue" />
+          <View style={styles.stepBadge}>
+            <Text style={styles.stepBadgeText}>Step 2 of 2</Text>
+          </View>
+        </View>
+
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.badge}>
             <View style={styles.badgePulseDot} />
-            <Text style={styles.badgeText}>STEP 2 OF 2 · SERVICE CATALOGUE</Text>
+            <Text style={styles.badgeText}>SERVICE SELECTION</Text>
           </View>
           <Text style={styles.title}>Select Your Services</Text>
           <Text style={styles.subtitle}>
@@ -124,7 +132,10 @@ export default function TaskSelectionScreen() {
         {/* Search Input Bar */}
         <View style={styles.searchContainer}>
           <View style={styles.searchInner}>
-            <Text style={styles.searchIcon}>🔍</Text>
+            <View style={styles.searchGlyphContainer}>
+              <View style={styles.searchCircle} />
+              <View style={styles.searchHandle} />
+            </View>
             <TextInput
               style={styles.searchInput}
               placeholder="Search services (e.g. plumbing, degreasing, AC)..."
@@ -349,10 +360,38 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
   },
+  topBrandBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginHorizontal: 16,
+    marginTop: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
+    ...theme.shadows.subtle,
+  },
+  stepBadge: {
+    backgroundColor: '#E8F5F1',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: '#C6EADE',
+  },
+  stepBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#155C49',
+    letterSpacing: 0.5,
+  },
   header: {
     paddingHorizontal: 16,
-    paddingTop: 18,
-    paddingBottom: 14,
+    paddingTop: 14,
+    paddingBottom: 12,
   },
   badge: {
     flexDirection: 'row',
@@ -408,10 +447,29 @@ const styles = StyleSheet.create({
     minHeight: 46,
     ...theme.shadows.subtle,
   },
-  searchIcon: {
-    fontSize: 15,
-    marginRight: 8,
-    opacity: 0.6,
+  searchGlyphContainer: {
+    width: 18,
+    height: 18,
+    marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  searchCircle: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#6B7280',
+  },
+  searchHandle: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    width: 6,
+    height: 2,
+    backgroundColor: '#6B7280',
+    transform: [{ rotate: '45deg' }],
+    borderRadius: 1,
   },
   searchInput: {
     flex: 1,
