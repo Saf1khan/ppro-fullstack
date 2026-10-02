@@ -429,3 +429,157 @@ export function getTaskVisual(taskName: string): TaskVisual {
     ratingScore: rating,
   };
 }
+
+export function getTaskHighlights(taskName: string): string[] {
+  const name = taskName.toLowerCase();
+  if (name.includes('chimney') || name.includes('kitchen') || name.includes('degreas')) {
+    return [
+      'Chemical degreasing of chimney baffle filters & stainless mesh',
+      'Intense scrub of stovetop, burner plates & backsplash tiles',
+      'Degreasing of cabinet exterior surfaces & exhaust duct',
+      'Food-safe sanitization of countertops & stainless steel sink',
+    ];
+  }
+  if (name.includes('bathroom') || name.includes('tile') || name.includes('acid wash')) {
+    return [
+      'Acid-safe descaling of wall tiles, grout lines & floor hard-water marks',
+      'Scale removal from shower head, taps & chrome fixtures',
+      'Deep chemical scrubbing of toilet bowl, commode & cistern',
+      'Mirror cleaning & anti-bacterial fogging sanitization',
+    ];
+  }
+  if (name.includes('move-in') || name.includes('residence') || name.includes('sanitization')) {
+    return [
+      'End-to-end vacuuming, wet-scrubbing & cobweb extraction across all rooms',
+      'Interior & exterior wiping of all cupboards, shelves & wardrobes',
+      'Window tracks, balcony glass & sliding door deep wash',
+      'Hospital-grade multi-surface sanitization & floor buffing',
+    ];
+  }
+  if (name.includes('sofa') || name.includes('upholstery') || name.includes('shampoo')) {
+    return [
+      'Dry vacuuming to extract deep dust mites, pet hair & allergens',
+      'Fabric-safe shampoo foam injection to dissolve deep sweat/oil stains',
+      'High-pressure moisture extraction for fast drying under 3 hours',
+      'Aromatherapy anti-microbial fabric deodorization spray',
+    ];
+  }
+  if (name.includes('drain') || name.includes('jetting') || name.includes('block')) {
+    return [
+      'High-pressure motorized drain snake & jetting for deep clogs',
+      'Dissolution of trapped grease, hair & solid sediment without pipe damage',
+      'P-trap cleaning & chemical pipe disinfection',
+      'Drain flow test with 50-litre pressure flush verification',
+    ];
+  }
+  if (name.includes('tank') || name.includes('disinfection') || name.includes('overhead')) {
+    return [
+      'Full drainage & high-pressure rotary mechanized scrubbing',
+      'Sludge suction extraction from floor & corners of tank',
+      'Anti-bacterial potassium permanganate/UV disinfection treatment',
+      'Float valve inspection & pipe inlet filter cleaning',
+    ];
+  }
+  if (name.includes('leak') || name.includes('acoustic') || name.includes('pipe')) {
+    return [
+      'Acoustic sensor ultrasound leak detection behind walls & tiles',
+      'Thermal imaging inspection for hidden moisture & seepage points',
+      'Zero-demolition pinhole leak pinpointing',
+      'Comprehensive leak diagnostic report with exact repair roadmap',
+    ];
+  }
+  if (name.includes('tap') || name.includes('mixer') || name.includes('faucet')) {
+    return [
+      'Cartridge & spindle disassembly, descaling & Teflon repacking',
+      'O-ring & rubber gasket replacement to eliminate persistent dripping',
+      'Pressure testing for hot & cold mixer balance',
+      'Chrome polish & aerator descaling for smooth water flow',
+    ];
+  }
+  if (name.includes('fan') || name.includes('ceiling') || name.includes('calibration')) {
+    return [
+      'Blade pitch & dynamic wobble angle calibration with gauge',
+      'Motor bearing lubrication & capacitor capacitance testing',
+      'Downrod safety bolt & cotter pin security inspection',
+      'Silent speed control & noise reduction tuning',
+    ];
+  }
+  if (name.includes('mcb') || name.includes('breaker') || name.includes('tripping') || name.includes('wiring')) {
+    return [
+      'Digital insulation resistance & earth-leakage current testing',
+      'Phase load balancing across MCBs to prevent breaker overheating',
+      'Terminal screw tightening to eliminate arching and spark hazard',
+      'Earthing loop impedance measurement & safety sign-off',
+    ];
+  }
+  if (name.includes('chandelier') || name.includes('led') || name.includes('fixture')) {
+    return [
+      'Heavy ceiling anchor load calculation & safety hook installation',
+      'Driver voltage stabilization & individual crystal prism assembly',
+      'Multi-switch dimming or remote receiver configuration',
+      'Safety drop-test verification before electrical power-up',
+    ];
+  }
+  if (name.includes('switch') || name.includes('smart') || name.includes('automation')) {
+    return [
+      'Retrofit Wi-Fi smart switch module installation behind switchboard',
+      'Neutral wire routing & surge protection connection',
+      'Mobile app pairing, scene configuration & voice assistant linking',
+      'Physical switch dual-mode override testing',
+    ];
+  }
+  if (name.includes('ac') || name.includes('foam') || name.includes('air conditioner')) {
+    return [
+      'High-pressure indoor cooling coil foam jetting with drain tray wash',
+      'Blower fan wheel scrub to eliminate mold spores & foul smell',
+      'Outdoor condenser fin pressure wash & gas pressure check',
+      'Temperature differential test at vent for optimal 18°C cooling',
+    ];
+  }
+  if (name.includes('ro') || name.includes('purifier') || name.includes('filter')) {
+    return [
+      'Multi-stage pre-sediment, activated carbon & post-carbon filter replacement',
+      'RO membrane flow rate & salt rejection efficiency test',
+      'Booster pump pressure & auto-cut-off solenoid valve test',
+      'Digital TDS meter calibration before and after filtration',
+    ];
+  }
+  if (name.includes('geyser') || name.includes('heater') || name.includes('coil')) {
+    return [
+      'Tank drainage and magnesium sacrificial anode replacement',
+      'Heavy mineral limescale removal from copper/incoloy heating coil',
+      'Thermostat safety cutout calibration to prevent overheating',
+      'Pressure relief valve & tank sealing gasket inspection',
+    ];
+  }
+  if (name.includes('microwave') || name.includes('magnetron')) {
+    return [
+      'High-voltage capacitor discharge & magnetron emission test',
+      'Door interlock switch safety test & radiation leakage measurement',
+      'Turntable motor & waveguide mica sheet replacement if burned',
+      'Thermal cutout & cooling fan performance verification',
+    ];
+  }
+  if (name.includes('washing machine') || name.includes('spin')) {
+    return [
+      'Drain pump disassembly & foreign object (coin/pin) extraction',
+      'Motor drive belt tensioning & suspension spring balance check',
+      'Spin tub bearing noise diagnostic & clutch test',
+      'Drum descaling cycle & water inlet solenoid check',
+    ];
+  }
+  if (name.includes('refrigerator') || name.includes('fridge') || name.includes('ice')) {
+    return [
+      'Evaporator defrost heater & bi-metal thermostat continuity test',
+      'Drain line defrost unclogging to prevent water pooling in crisper',
+      'Condenser coil cleaning & compressor starting relay check',
+      'Door magnetic gasket seal test with vacuum paper check',
+    ];
+  }
+  return [
+    'Certified technician dispatch with specialized professional tools',
+    'Thorough multi-point inspection before starting work',
+    'Execution adhering to PadosiPro quality and safety standards',
+    'Post-service testing, cleanup and 30-day warranty sign-off',
+  ];
+}

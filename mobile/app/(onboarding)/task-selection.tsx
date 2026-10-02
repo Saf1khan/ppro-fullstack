@@ -3,7 +3,9 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  Modal,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -12,7 +14,11 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { BrandLogo, Button, Card } from '../../src/components';
-import { getCategoryVisual, getTaskVisual } from '../../src/constants/serviceIcons';
+import {
+  getCategoryVisual,
+  getTaskHighlights,
+  getTaskVisual,
+} from '../../src/constants/serviceIcons';
 import { formatApiErrorMessage, profileApi, tasksApi } from '../../src/services/api';
 import { theme } from '../../src/theme';
 import { UserProfile } from '../../src/types/profile';
@@ -26,6 +32,9 @@ export default function TaskSelectionScreen() {
   const [activeCategorySlug, setActiveCategorySlug] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [profile, setProfile] = useState<UserProfile | null>(null);
+
+  // Active task opened in the detailed inspection modal ("see the point what is actually")
+  const [activeDetailTask, setActiveDetailTask] = useState<Task | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -125,6 +134,11 @@ export default function TaskSelectionScreen() {
   };
 
   const deliveryAddress = profile?.address || 'Flat 402, Sunshine Heights, Bengaluru';
+
+  // Details for the currently opened modal task
+  const activeVisual = activeDetailTask ? getTaskVisual(activeDetailTask.name) : null;
+  const activeHighlights = activeDetailTask ? getTaskHighlights(activeDetailTask.name) : [];
+  const isActiveSelected = activeDetailTask ? selectedTaskIds.has(activeDetailTask.id) : false;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -257,9 +271,10 @@ export default function TaskSelectionScreen() {
 
               return (
                 <View style={styles.cardWrapper}>
+                  {/* Tapping anywhere on the card opens the detailed scope inspection sheet */}
                   <TouchableOpacity
                     activeOpacity={0.92}
-                    onPress={() => toggleTask(item.id)}
+                    onPress={() => setActiveDetailTask(item)}
                     style={[styles.productCard, isSelected && styles.selectedProductCard]}
                   >
                     {/* Image with Badges */}
@@ -313,10 +328,8 @@ export default function TaskSelectionScreen() {
                         {item.name}
                       </Text>
 
-                      {/* Specs / Short Description */}
-                      <Text style={styles.productDesc} numberOfLines={1}>
-                        {item.short_description}
-                      </Text>
+                      {/* Tap to inspect hint */}
+                      <Text style={styles.viewDetailsText}>View what's included →</Text>
 
                       {/* Pricing & Add Button Row */}
                       <View style={styles.priceActionRow}>
@@ -331,10 +344,13 @@ export default function TaskSelectionScreen() {
                           )}
                         </View>
 
-                        {/* Tactile Add Button */}
+                        {/* Tactile Quick Add Button (toggles directly without opening modal) */}
                         <TouchableOpacity
                           activeOpacity={0.8}
-                          onPress={() => toggleTask(item.id)}
+                          onPress={(e) => {
+                            e.stopPropagation?.();
+                            toggleTask(item.id);
+                          }}
                           style={[
                             styles.addButton,
                             isSelected && styles.addButtonSelected,
@@ -358,6 +374,183 @@ export default function TaskSelectionScreen() {
           />
         )}
       </View>
+
+      {/* ============================================================== */}
+      {/* SERVICE DETAIL INSPECTION MODAL ("See the point what is actually") */}
+      {/* ============================================================== */}
+      <Modal
+        visible={Boolean(activeDetailTask)}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setActiveDetailTask(null)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalSheet}>
+            {/* Modal Drag/Close Header */}
+            <View style={styles.modalTopHeader}>
+              <View style={styles.modalCategoryRow}>
+                {activeVisual && (
+                  <View
+                    style={[
+                      styles.modalCategoryTag,
+                      {
+                        backgroundColor: activeVisual.accentBg,
+                        borderColor: activeVisual.borderColor,
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.modalTagDot,
+                        { backgroundColor: activeVisual.dotColor },
+                      ]}
+                    />
+                    <Text
+                      style={[
+                        styles.modalCategoryText,
+                        { color: activeVisual.textColor },
+                      ]}
+                    >
+                      {activeVisual.badge}
+                    </Text>
+                  </View>
+                )}
+                {activeVisual && (
+                  <Text style={styles.modalEtaText}>{activeVisual.etaBadge}</Text>
+                )}
+              </View>
+
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setActiveDetailTask(null)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.modalCloseText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Scrollable Scope & Bullet Points */}
+            <ScrollView style={styles.modalScrollBody} showsVerticalScrollIndicator={false}>
+              {/* Full Image Banner */}
+              {activeVisual && (
+                <View style={styles.modalBannerContainer}>
+                  <Image
+                    source={{ uri: activeVisual.image }}
+                    style={styles.modalBannerImage}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.modalRatingPill}>
+                    <Text style={styles.modalRatingPillText}>★ {activeVisual.ratingScore} · 1.2k bookings</Text>
+                  </View>
+                </View>
+              )}
+
+              {/* Title & Pricing Block */}
+              <View style={styles.modalTitleBlock}>
+                <Text style={styles.modalServiceTitle}>
+                  {activeDetailTask?.name}
+                </Text>
+                <Text style={styles.modalShortDesc}>
+                  {activeDetailTask?.short_description}
+                </Text>
+
+                <View style={styles.modalPriceRow}>
+                  <Text style={styles.modalPriceMain}>
+                    {activeVisual?.priceFormatted}
+                  </Text>
+                  {activeVisual?.originalPriceFormatted && (
+                    <Text style={styles.modalPriceOriginal}>
+                      {activeVisual.originalPriceFormatted}
+                    </Text>
+                  )}
+                  <View style={styles.modalDiscountPill}>
+                    <Text style={styles.modalDiscountText}>33% OFF</Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* BULLET POINTS: What's Included / Scope of Work */}
+              <View style={styles.scopeSection}>
+                <View style={styles.scopeSectionHeader}>
+                  <Text style={styles.scopeSectionTitle}>What is Included in this Service</Text>
+                  <Text style={styles.scopeSectionSub}>Verified checklist executed by certified technician</Text>
+                </View>
+
+                <View style={styles.highlightsCard}>
+                  {activeHighlights.map((point, pIdx) => (
+                    <View key={pIdx} style={styles.highlightItem}>
+                      <View style={styles.checkCircle}>
+                        <Text style={styles.checkIconText}>✓</Text>
+                      </View>
+                      <Text style={styles.highlightText}>{point}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+
+              {/* HOW IT WORKS: Step by Step */}
+              <View style={styles.howItWorksSection}>
+                <Text style={styles.howTitle}>How PadosiPro Handles It</Text>
+                <View style={styles.stepRow}>
+                  <Text style={styles.stepNum}>1</Text>
+                  <Text style={styles.stepText}>Dedicated Lifestyle Manager verifies schedule & tools.</Text>
+                </View>
+                <View style={styles.stepRow}>
+                  <Text style={styles.stepNum}>2</Text>
+                  <Text style={styles.stepText}>Certified background-checked pro arrives with genuine equipment.</Text>
+                </View>
+                <View style={styles.stepRow}>
+                  <Text style={styles.stepNum}>3</Text>
+                  <Text style={styles.stepText}>Post-service cleanup, safety sign-off & 30-day warranty.</Text>
+                </View>
+              </View>
+
+              {/* PadosiPro Guarantee Box */}
+              <View style={styles.modalGuaranteeBox}>
+                <Text style={styles.modalGuaranteeIcon}>🛡️</Text>
+                <View style={styles.modalGuaranteeTextCol}>
+                  <Text style={styles.modalGuaranteeTitle}>PadosiPro Service Guarantee</Text>
+                  <Text style={styles.modalGuaranteeDesc}>
+                    30-Day Revisit Warranty · Certified Insurance · Free Cancellation
+                  </Text>
+                </View>
+              </View>
+
+              <View style={{ height: 90 }} />
+            </ScrollView>
+
+            {/* Modal Bottom Sticky Decision Bar */}
+            <View style={styles.modalBottomBar}>
+              <View style={styles.modalBottomPriceCol}>
+                <Text style={styles.modalBottomPriceLabel}>PRICE</Text>
+                <Text style={styles.modalBottomPriceValue}>{activeVisual?.priceFormatted}</Text>
+              </View>
+
+              <TouchableOpacity
+                activeOpacity={0.88}
+                onPress={() => {
+                  if (activeDetailTask) {
+                    toggleTask(activeDetailTask.id);
+                  }
+                }}
+                style={[
+                  styles.modalDecisionButton,
+                  isActiveSelected && styles.modalDecisionButtonActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.modalDecisionButtonText,
+                    isActiveSelected && styles.modalDecisionButtonTextActive,
+                  ]}
+                >
+                  {isActiveSelected ? '✓ Added · Tap to Remove' : '+ Add Service to Selection'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Blinkit-Style Persistent Floating Bottom Checkout Bar */}
       {selectedTaskIds.size > 0 && (
@@ -700,13 +893,14 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     fontWeight: '700',
     color: '#0F172A',
-    marginBottom: 4,
+    marginBottom: 2,
     minHeight: 36,
   },
-  productDesc: {
+  viewDetailsText: {
     fontSize: 11,
-    color: '#64748B',
-    marginBottom: 10,
+    color: '#155C49',
+    fontWeight: '600',
+    marginBottom: 8,
   },
   priceActionRow: {
     flexDirection: 'row',
@@ -752,6 +946,316 @@ const styles = StyleSheet.create({
   addButtonTextSelected: {
     color: '#FFFFFF',
   },
+
+  /* ===================== */
+  /* MODAL STYLES          */
+  /* ===================== */
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '88%',
+    width: '100%',
+    maxWidth: 620,
+    alignSelf: 'center',
+    overflow: 'hidden',
+  },
+  modalTopHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  modalCategoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  modalCategoryTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    gap: 5,
+  },
+  modalTagDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+  },
+  modalCategoryText: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  modalEtaText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#10B981',
+  },
+  modalCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCloseText: {
+    fontSize: 14,
+    color: '#475569',
+    fontWeight: '700',
+  },
+  modalScrollBody: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+  },
+  modalBannerContainer: {
+    width: '100%',
+    height: 160,
+    borderRadius: 16,
+    overflow: 'hidden',
+    position: 'relative',
+    marginBottom: 14,
+  },
+  modalBannerImage: {
+    width: '100%',
+    height: '100%',
+  },
+  modalRatingPill: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  modalRatingPillText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  modalTitleBlock: {
+    marginBottom: 16,
+  },
+  modalServiceTitle: {
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 4,
+    letterSpacing: -0.4,
+  },
+  modalShortDesc: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: '#64748B',
+    marginBottom: 10,
+  },
+  modalPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  modalPriceMain: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  modalPriceOriginal: {
+    fontSize: 14,
+    color: '#94A3B8',
+    textDecorationLine: 'line-through',
+  },
+  modalDiscountPill: {
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  modalDiscountText: {
+    color: '#047857',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  scopeSection: {
+    marginBottom: 18,
+  },
+  scopeSectionHeader: {
+    marginBottom: 8,
+  },
+  scopeSectionTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  scopeSectionSub: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 1,
+  },
+  highlightsCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    gap: 10,
+  },
+  highlightItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  checkCircle: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#155C49',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 1,
+  },
+  checkIconText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  highlightText: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#334155',
+    flex: 1,
+    fontWeight: '500',
+  },
+  howItWorksSection: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 14,
+    gap: 8,
+  },
+  howTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 4,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  stepNum: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#E2E8F0',
+    textAlign: 'center',
+    lineHeight: 20,
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  stepText: {
+    fontSize: 12,
+    color: '#475569',
+    flex: 1,
+  },
+  modalGuaranteeBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    gap: 10,
+    marginBottom: 12,
+  },
+  modalGuaranteeIcon: {
+    fontSize: 20,
+  },
+  modalGuaranteeTextCol: {
+    flex: 1,
+  },
+  modalGuaranteeTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#047857',
+  },
+  modalGuaranteeDesc: {
+    fontSize: 10,
+    color: '#065F46',
+    marginTop: 1,
+  },
+  modalBottomBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    ...theme.shadows.card,
+  },
+  modalBottomPriceCol: {
+    justifyContent: 'center',
+  },
+  modalBottomPriceLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#64748B',
+  },
+  modalBottomPriceValue: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  modalDecisionButton: {
+    backgroundColor: '#155C49',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    minWidth: 200,
+    alignItems: 'center',
+  },
+  modalDecisionButtonActive: {
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1.5,
+    borderColor: '#155C49',
+  },
+  modalDecisionButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  modalDecisionButtonTextActive: {
+    color: '#155C49',
+  },
+
+  /* ===================== */
+  /* CART BAR STYLES       */
+  /* ===================== */
   floatingCartContainer: {
     position: 'absolute',
     bottom: 16,
