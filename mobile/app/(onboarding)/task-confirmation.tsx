@@ -107,20 +107,35 @@ export default function TaskConfirmationScreen() {
   const deliveryPhone = profile?.phone_number || '+91 98765 43210';
   const customerName = profile?.full_name || 'Rahul Sharma';
 
+  const handleGoBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(onboarding)/task-selection');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.centerContainer}>
-          {/* Top Brand Navigation Header */}
-          <View style={styles.topBrandBar}>
-            <BrandLogo size="xs" withText horizontal tagline="Order Checkout" />
+          {/* Top Brand Navigation Header with Prominent Back Action */}
+          <View style={styles.topNavHeader}>
             <TouchableOpacity
               style={styles.backButtonTop}
-              onPress={() => router.back()}
-              activeOpacity={0.8}
+              onPress={handleGoBack}
+              activeOpacity={0.75}
             >
-              <Text style={styles.backButtonTopText}>← Back to Services</Text>
+              <View style={styles.backIconCircle}>
+                <Text style={styles.backIconText}>←</Text>
+              </View>
+              <View style={styles.backTextCol}>
+                <Text style={styles.backButtonTopText}>Back to Services</Text>
+                <Text style={styles.backButtonSubText}>Add or remove items</Text>
+              </View>
             </TouchableOpacity>
+
+            <BrandLogo size="xs" withText horizontal tagline="Checkout" />
           </View>
 
           {error ? (
@@ -141,8 +156,8 @@ export default function TaskConfirmationScreen() {
                 Please go back and select at least one household service.
               </Text>
               <Button
-                title="Return to Catalogue"
-                onPress={() => router.back()}
+                title="← Return to Catalogue"
+                onPress={handleGoBack}
                 style={styles.backButton}
               />
             </Card>
@@ -206,8 +221,8 @@ export default function TaskConfirmationScreen() {
                   <Text style={styles.sectionTitle}>
                     Selected Services ({selectedTasksList.length})
                   </Text>
-                  <TouchableOpacity onPress={() => router.back()}>
-                    <Text style={styles.addMoreLink}>+ Add More</Text>
+                  <TouchableOpacity onPress={handleGoBack} activeOpacity={0.7}>
+                    <Text style={styles.addMoreLink}>+ Add / Edit Services</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -316,7 +331,7 @@ export default function TaskConfirmationScreen() {
         </View>
       </ScrollView>
 
-      {/* Sticky Bottom Checkout Footer */}
+      {/* Sticky Bottom Checkout Footer with Both Back & Confirm Actions */}
       {!loading && selectedTasksList.length > 0 && (
         <View style={styles.stickyFooter}>
           <View style={styles.footerInner}>
@@ -328,21 +343,31 @@ export default function TaskConfirmationScreen() {
               </Text>
             </View>
 
-            <TouchableOpacity
-              activeOpacity={0.88}
-              onPress={handleConfirm}
-              disabled={saving}
-              style={[styles.confirmButton, saving && styles.confirmButtonDisabled]}
-            >
-              {saving ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <View style={styles.confirmButtonContent}>
-                  <Text style={styles.confirmButtonText}>Place Service Request</Text>
-                  <Text style={styles.confirmArrow}>→</Text>
-                </View>
-              )}
-            </TouchableOpacity>
+            <View style={styles.footerButtonsGroup}>
+              <TouchableOpacity
+                style={styles.footerBackSecondary}
+                onPress={handleGoBack}
+                activeOpacity={0.75}
+              >
+                <Text style={styles.footerBackSecondaryText}>← Add Items</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.88}
+                onPress={handleConfirm}
+                disabled={saving}
+                style={[styles.confirmButton, saving && styles.confirmButtonDisabled]}
+              >
+                {saving ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <View style={styles.confirmButtonContent}>
+                    <Text style={styles.confirmButtonText}>Place Request</Text>
+                    <Text style={styles.confirmArrow}>→</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       )}
@@ -365,12 +390,12 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
   },
-  topBrandBar: {
+  topNavHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 10,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
     borderWidth: 1,
@@ -379,15 +404,39 @@ const styles = StyleSheet.create({
     ...theme.shadows.subtle,
   },
   backButtonTop: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 6,
     borderRadius: 8,
+    gap: 8,
+  },
+  backIconCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  backIconText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#155C49',
+  },
+  backTextCol: {
+    justifyContent: 'center',
   },
   backButtonTopText: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#334155',
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  backButtonSubText: {
+    fontSize: 10,
+    color: '#64748B',
   },
   sectionCard: {
     backgroundColor: '#FFFFFF',
@@ -693,14 +742,32 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#64748B',
   },
+  footerButtonsGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  footerBackSecondary: {
+    backgroundColor: '#F1F5F9',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  footerBackSecondaryText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#334155',
+  },
   confirmButton: {
     backgroundColor: '#155C49',
     borderRadius: 12,
     paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 190,
+    minWidth: 160,
   },
   confirmButtonDisabled: {
     opacity: 0.7,
