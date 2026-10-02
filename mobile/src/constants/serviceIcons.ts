@@ -16,6 +16,11 @@ export interface TaskVisual {
   textColor: string;
   dotColor: string;
   tagSecondary: string;
+  priceNumeric: number;
+  priceFormatted: string;
+  originalPriceFormatted?: string;
+  etaBadge: string;
+  ratingScore: string;
 }
 
 export const CATEGORY_VISUALS: Record<string, CategoryVisual> = {
@@ -73,7 +78,9 @@ export function getCategoryVisual(slugOrName?: string): CategoryVisual {
   return DEFAULT_CATEGORY_VISUAL;
 }
 
-export const TASK_VISUALS: Record<string, TaskVisual> = {
+export type TaskVisualConfig = Omit<TaskVisual, 'priceNumeric' | 'priceFormatted' | 'etaBadge' | 'ratingScore'>;
+
+export const TASK_VISUALS: Record<string, TaskVisualConfig> = {
   'kitchen deep degreasing & chimney scrub': {
     image: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=400&q=80',
     badge: 'KITCHEN CARE',
@@ -318,22 +325,107 @@ export const TASK_VISUALS: Record<string, TaskVisual> = {
 
 export function getTaskVisual(taskName: string): TaskVisual {
   const normalized = taskName.trim().toLowerCase();
-  if (TASK_VISUALS[normalized]) {
-    return TASK_VISUALS[normalized];
-  }
-  for (const [key, visual] of Object.entries(TASK_VISUALS)) {
-    if (normalized.includes(key) || key.includes(normalized)) {
-      return visual;
+  let base: Partial<TaskVisual> = TASK_VISUALS[normalized];
+
+  if (!base) {
+    for (const [key, visual] of Object.entries(TASK_VISUALS)) {
+      if (normalized.includes(key) || key.includes(normalized)) {
+        base = visual;
+        break;
+      }
     }
   }
+
+  if (!base) {
+    base = {
+      image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=400&q=80',
+      badge: 'VERIFIED PRO',
+      category: 'General',
+      accentBg: '#ECFDF5',
+      borderColor: '#A7F3D0',
+      textColor: '#047857',
+      dotColor: '#10B981',
+      tagSecondary: '★ 4.9 · 30m',
+    };
+  }
+
+  // Derive deterministic realistic pricing and ETA if not specified
+  let price = 499;
+  let original = 749;
+  let eta = '⚡ 30 MINS';
+  let rating = '4.9';
+
+  const cat = (base.category || '').toLowerCase();
+  const name = normalized;
+
+  if (cat.includes('clean') || name.includes('clean') || name.includes('move-in') || name.includes('degreas')) {
+    if (name.includes('move-in') || name.includes('renovation')) {
+      price = 1499;
+      original = 1999;
+      eta = '⚡ 60 MINS';
+      rating = '5.0';
+    } else if (name.includes('chimney') || name.includes('kitchen')) {
+      price = 599;
+      original = 899;
+      eta = '⚡ 45 MINS';
+      rating = '4.9';
+    } else {
+      price = 449;
+      original = 699;
+      eta = '⚡ 30 MINS';
+      rating = '4.8';
+    }
+  } else if (cat.includes('plumb') || name.includes('drain') || name.includes('pipe') || name.includes('tap')) {
+    if (name.includes('acoustic') || name.includes('tank')) {
+      price = 649;
+      original = 949;
+      eta = '⚡ 45 MINS';
+      rating = '4.9';
+    } else {
+      price = 299;
+      original = 499;
+      eta = '⚡ 20 MINS';
+      rating = '4.8';
+    }
+  } else if (cat.includes('elect') || name.includes('fan') || name.includes('switch') || name.includes('light')) {
+    if (name.includes('inverter') || name.includes('chandelier') || name.includes('breaker')) {
+      price = 549;
+      original = 799;
+      eta = '⚡ 30 MINS';
+      rating = '5.0';
+    } else {
+      price = 249;
+      original = 399;
+      eta = '⚡ 15 MINS';
+      rating = '4.9';
+    }
+  } else if (cat.includes('appliance') || name.includes('ac') || name.includes('geyser') || name.includes('ro')) {
+    if (name.includes('ac') || name.includes('magnetron')) {
+      price = 699;
+      original = 999;
+      eta = '⚡ 40 MINS';
+      rating = '4.9';
+    } else {
+      price = 499;
+      original = 749;
+      eta = '⚡ 30 MINS';
+      rating = '4.8';
+    }
+  }
+
   return {
-    image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=400&q=80',
-    badge: 'VERIFIED PRO',
-    category: 'General',
-    accentBg: '#ECFDF5',
-    borderColor: '#A7F3D0',
-    textColor: '#047857',
-    dotColor: '#10B981',
-    tagSecondary: '★ 4.9 · Verified',
+    image: base.image || 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=400&q=80',
+    badge: base.badge || 'VERIFIED PRO',
+    category: base.category || 'Home Services',
+    accentBg: base.accentBg || '#ECFDF5',
+    borderColor: base.borderColor || '#A7F3D0',
+    textColor: base.textColor || '#047857',
+    dotColor: base.dotColor || '#10B981',
+    tagSecondary: base.tagSecondary || '★ 4.9 · 30m',
+    priceNumeric: price,
+    priceFormatted: `₹${price}`,
+    originalPriceFormatted: `₹${original}`,
+    etaBadge: eta,
+    ratingScore: rating,
   };
 }

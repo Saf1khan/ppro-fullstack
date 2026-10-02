@@ -12,9 +12,17 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { BrandLogo, Button, Card } from '../../src/components';
 import { getCategoryVisual, getTaskVisual } from '../../src/constants/serviceIcons';
-import { formatApiErrorMessage, tasksApi } from '../../src/services/api';
+import { formatApiErrorMessage, profileApi, tasksApi } from '../../src/services/api';
 import { theme } from '../../src/theme';
+import { UserProfile } from '../../src/types/profile';
 import { CategoryWithTasks, Task } from '../../src/types/task';
+
+const TIME_SLOTS = [
+  { id: 'instant', label: '⚡ Instant', desc: 'Within 45 mins' },
+  { id: 'morning', label: '🌅 Morning', desc: '9:00 AM - 12:00 PM' },
+  { id: 'afternoon', label: '☀️ Afternoon', desc: '2:00 PM - 5:00 PM' },
+  { id: 'evening', label: '🌙 Evening', desc: '6:00 PM - 9:00 PM' },
+];
 
 export default function TaskConfirmationScreen() {
   const router = useRouter();
@@ -26,41 +34,59 @@ export default function TaskConfirmationScreen() {
   }, [params.taskIds]);
 
   const [categories, setCategories] = useState<CategoryWithTasks[]>([]);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState('instant');
 
   useEffect(() => {
-    async function fetchCatalogue() {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        const cats = await tasksApi.getCategories();
+        const [cats, prof] = await Promise.all([
+          tasksApi.getCategories(),
+          profileApi.getMyProfile().catch(() => null),
+        ]);
         setCategories(cats);
+        setProfile(prof);
       } catch (err) {
         setError(formatApiErrorMessage(err));
       } finally {
         setLoading(false);
       }
-    }
-    fetchCatalogue();
+    };
+
+    fetchData();
   }, []);
 
-  const groupedSelectedTasks = useMemo(() => {
-    const idSet = new Set(selectedIds);
-    const groups: { categoryName: string; slug: string; tasks: Task[] }[] = [];
-
+  const allTasksMap = useMemo(() => {
+    const map = new Map<string, Task>();
     categories.forEach((cat) => {
-      const matchingTasks = cat.tasks.filter((t) => idSet.has(t.id));
-      if (matchingTasks.length > 0) {
-        groups.push({
-          categoryName: cat.name,
-          slug: cat.slug,
-          tasks: matchingTasks,
-        });
-      }
+      cat.tasks.forEach((t) => {
+        map.set(t.id, { ...t, category_name: cat.name });
+      });
     });
+    return map;
+  }, [categories]);
 
-    return groups;
-  }, [categories, selectedIds]);
+  const selectedTasksList = useMemo(() => {
+    return selectedIds
+      .map((id) => allTasksMap.get(id))
+      .filter((t): t is Task => Boolean(t));
+  }, [selectedIds, allTasksMap]);
+
+  // Billing calculations
+  const itemsTotal = useMemo(() => {
+    return selectedTasksList.reduce((acc, item) => {
+      const v = getTaskVisual(item.name);
+      return acc + v.priceNumeric;
+    }, 0);
+  }, [selectedTasksList]);
+
+  const platformFee = 29;
+  const grandTotal = itemsTotal + platformFee;
 
   const handleConfirm = async () => {
     if (selectedIds.length === 0) return;
@@ -69,6 +95,7 @@ export default function TaskConfirmationScreen() {
     setError(null);
     try {
       await tasksApi.selectTasks(selectedIds);
+      // Route immediately into the enterprise status dashboard!
       router.replace('/(app)');
     } catch (err) {
       setError(formatApiErrorMessage(err));
@@ -76,31 +103,24 @@ export default function TaskConfirmationScreen() {
     }
   };
 
+  const deliveryAddress = profile?.address || 'Flat 402, Sunshine Heights, MG Road, Bengaluru';
+  const deliveryPhone = profile?.phone_number || '+91 98765 43210';
+  const customerName = profile?.full_name || 'Rahul Sharma';
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.centerContainer}>
-          {/* Top Navigation Brand Bar */}
+          {/* Top Brand Navigation Header */}
           <View style={styles.topBrandBar}>
-            <BrandLogo size="sm" withText horizontal tagline="Confirmation & Review" />
+            <BrandLogo size="xs" withText horizontal tagline="Order Checkout" />
             <TouchableOpacity
               style={styles.backButtonTop}
               onPress={() => router.back()}
+              activeOpacity={0.8}
             >
-              <Text style={styles.backButtonTopText}>← Change</Text>
+              <Text style={styles.backButtonTopText}>← Back to Services</Text>
             </TouchableOpacity>
-          </View>
-
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.badge}>
-              <View style={styles.badgePulseDot} />
-              <Text style={styles.badgeText}>FINAL STEP · REVIEW & CONFIRM</Text>
-            </View>
-            <Text style={styles.title}>Confirm Your Services</Text>
-            <Text style={styles.subtitle}>
-              Review your {selectedIds.length} chosen {selectedIds.length === 1 ? 'service' : 'services'} before publishing them to neighbourhood clients.
-            </Text>
           </View>
 
           {error ? (
@@ -112,13 +132,13 @@ export default function TaskConfirmationScreen() {
           {loading ? (
             <View style={styles.centered}>
               <ActivityIndicator size="large" color={theme.colors.primary} />
-              <Text style={styles.loadingText}>Preparing your service summary...</Text>
+              <Text style={styles.loadingText}>Preparing your checkout summary...</Text>
             </View>
-          ) : groupedSelectedTasks.length === 0 ? (
+          ) : selectedTasksList.length === 0 ? (
             <Card variant="elevated" style={styles.emptyCard}>
-              <Text style={styles.emptyTitle}>No Services Selected</Text>
+              <Text style={styles.emptyTitle}>Cart is Empty</Text>
               <Text style={styles.emptySubtitle}>
-                Please go back and select at least one service to offer.
+                Please go back and select at least one household service.
               </Text>
               <Button
                 title="Return to Catalogue"
@@ -128,135 +148,204 @@ export default function TaskConfirmationScreen() {
             </Card>
           ) : (
             <>
-              {/* Summary Stats Bar */}
-              <View style={styles.summaryBar}>
-                <View style={styles.summaryItem}>
-                  <Text style={styles.summaryValue}>{selectedIds.length}</Text>
-                  <Text style={styles.summaryLabel}>TOTAL SERVICES</Text>
+              {/* 1. Delivery & Service Address Card (Blinkit style) */}
+              <View style={styles.sectionCard}>
+                <View style={styles.cardHeaderRow}>
+                  <View style={styles.cardHeaderLeft}>
+                    <View style={styles.locationPinBadge}>
+                      <Text style={styles.locationPinIcon}>📍</Text>
+                    </View>
+                    <View>
+                      <Text style={styles.sectionTitle}>Service Address</Text>
+                      <Text style={styles.sectionSubtitle}>Verified Neighborhood Pro Coverage</Text>
+                    </View>
+                  </View>
+                  <View style={styles.verifiedTag}>
+                    <Text style={styles.verifiedTagText}>VERIFIED</Text>
+                  </View>
                 </View>
-                <View style={styles.summaryDivider} />
-                <View style={styles.summaryItem}>
-                  <Text style={styles.summaryValue}>{groupedSelectedTasks.length}</Text>
-                  <Text style={styles.summaryLabel}>CATEGORIES</Text>
-                </View>
-                <View style={styles.summaryDivider} />
-                <View style={styles.summaryItem}>
-                  <Text style={[styles.summaryValue, { color: '#059669' }]}>Active</Text>
-                  <Text style={styles.summaryLabel}>VERIFIED STATUS</Text>
+
+                <View style={styles.addressBox}>
+                  <Text style={styles.addressName}>{customerName} · {deliveryPhone}</Text>
+                  <Text style={styles.addressDetails}>{deliveryAddress}</Text>
                 </View>
               </View>
 
-              {/* Grouped Service Cards */}
-              {groupedSelectedTasks.map((group, gIdx) => {
-                const catVisual = getCategoryVisual(group.slug);
-                return (
-                  <View key={gIdx} style={styles.categorySection}>
-                    <View style={styles.categoryHeader}>
-                      <Text style={styles.categoryTitle}>{group.categoryName}</Text>
-                      <View
-                        style={[
-                          styles.countBadge,
-                          {
-                            backgroundColor: catVisual.badgeBg,
-                            borderColor: catVisual.borderColor,
-                          },
-                        ]}
-                      >
-                        <View
-                          style={[
-                            styles.chipDot,
-                            { backgroundColor: catVisual.dotColor },
-                          ]}
-                        />
-                        <Text
-                          style={[
-                            styles.countBadgeText,
-                            { color: catVisual.textColor },
-                          ]}
-                        >
-                          {group.tasks.length} {group.tasks.length === 1 ? 'task' : 'tasks'}
-                        </Text>
-                      </View>
-                    </View>
+              {/* 2. Service Schedule / Time Slot Selector */}
+              <View style={styles.sectionCard}>
+                <View style={styles.cardHeaderRow}>
+                  <Text style={styles.sectionTitle}>Preferred Time Slot</Text>
+                  <Text style={styles.slotHint}>Guaranteed arrival</Text>
+                </View>
 
-                    <View style={styles.tasksList}>
-                      {group.tasks.map((task) => {
-                        const taskVisual = getTaskVisual(task.name);
-                        return (
-                          <View key={task.id} style={styles.taskCard}>
-                            <View style={styles.imageContainer}>
-                              <Image
-                                source={{ uri: taskVisual.image }}
-                                style={styles.taskImage}
-                                resizeMode="cover"
+                <View style={styles.slotsGrid}>
+                  {TIME_SLOTS.map((slot) => {
+                    const isSelected = selectedSlot === slot.id;
+                    return (
+                      <TouchableOpacity
+                        key={slot.id}
+                        activeOpacity={0.82}
+                        onPress={() => setSelectedSlot(slot.id)}
+                        style={[styles.slotPill, isSelected && styles.selectedSlotPill]}
+                      >
+                        <Text style={[styles.slotLabel, isSelected && styles.selectedSlotLabel]}>
+                          {slot.label}
+                        </Text>
+                        <Text style={[styles.slotDesc, isSelected && styles.selectedSlotDesc]}>
+                          {slot.desc}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* 3. Items Ordered Breakdown */}
+              <View style={styles.sectionCard}>
+                <View style={styles.cardHeaderRow}>
+                  <Text style={styles.sectionTitle}>
+                    Selected Services ({selectedTasksList.length})
+                  </Text>
+                  <TouchableOpacity onPress={() => router.back()}>
+                    <Text style={styles.addMoreLink}>+ Add More</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.itemsList}>
+                  {selectedTasksList.map((item, idx) => {
+                    const visual = getTaskVisual(item.name);
+                    return (
+                      <View key={item.id} style={[styles.itemRow, idx > 0 && styles.itemRowBorder]}>
+                        <Image
+                          source={{ uri: visual.image }}
+                          style={styles.itemThumb}
+                          resizeMode="cover"
+                        />
+                        <View style={styles.itemInfo}>
+                          <View style={styles.itemTagRow}>
+                            <View
+                              style={[
+                                styles.itemMicroTag,
+                                {
+                                  backgroundColor: visual.accentBg,
+                                  borderColor: visual.borderColor,
+                                },
+                              ]}
+                            >
+                              <View
+                                style={[
+                                  styles.itemTagDot,
+                                  { backgroundColor: visual.dotColor },
+                                ]}
                               />
-                            </View>
-                            <View style={styles.taskDetails}>
-                              <View style={styles.tagRow}>
-                                <View
-                                  style={[
-                                    styles.categoryTag,
-                                    {
-                                      backgroundColor: taskVisual.accentBg,
-                                      borderColor: taskVisual.borderColor,
-                                    },
-                                  ]}
-                                >
-                                  <View
-                                    style={[
-                                      styles.tagDot,
-                                      { backgroundColor: taskVisual.dotColor },
-                                    ]}
-                                  />
-                                  <Text
-                                    style={[
-                                      styles.categoryTagText,
-                                      { color: taskVisual.textColor },
-                                    ]}
-                                  >
-                                    {taskVisual.badge}
-                                  </Text>
-                                </View>
-                              </View>
-                              <Text style={styles.taskName}>{task.name}</Text>
                               <Text
-                                style={styles.taskDescription}
-                                numberOfLines={2}
+                                style={[
+                                  styles.itemTagText,
+                                  { color: visual.textColor },
+                                ]}
                               >
-                                {task.short_description}
+                                {visual.badge}
                               </Text>
                             </View>
-                            <View style={styles.verifiedCheck}>
-                              <Text style={styles.verifiedCheckText}>✓</Text>
-                            </View>
+                            <Text style={styles.itemEtaText}>{visual.etaBadge}</Text>
                           </View>
-                        );
-                      })}
-                    </View>
-                  </View>
-                );
-              })}
+                          <Text style={styles.itemName}>{item.name}</Text>
+                          <Text style={styles.itemDesc} numberOfLines={1}>
+                            {item.short_description}
+                          </Text>
+                        </View>
+                        <View style={styles.itemPriceColumn}>
+                          <Text style={styles.itemPrice}>{visual.priceFormatted}</Text>
+                          {visual.originalPriceFormatted && (
+                            <Text style={styles.itemOriginalPrice}>
+                              {visual.originalPriceFormatted}
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
 
-              {/* Actions Section */}
-              <View style={styles.actionContainer}>
-                <Button
-                  title="Confirm & Launch Services →"
-                  onPress={handleConfirm}
-                  loading={saving}
-                  style={styles.confirmButton}
-                />
-                <Button
-                  title="Edit Selection"
-                  variant="outline"
-                  onPress={() => router.back()}
-                  disabled={saving}
-                  style={styles.editButton}
-                />
+              {/* 4. Bill Details Card (Blinkit style) */}
+              <View style={styles.sectionCard}>
+                <Text style={styles.sectionTitle}>Bill Summary</Text>
+
+                <View style={styles.billTable}>
+                  <View style={styles.billRow}>
+                    <Text style={styles.billLabel}>Service Items Total</Text>
+                    <Text style={styles.billValue}>₹{itemsTotal}</Text>
+                  </View>
+
+                  <View style={styles.billRow}>
+                    <View style={styles.managerFeeRow}>
+                      <Text style={styles.billLabel}>Lifestyle Manager Allocation</Text>
+                      <View style={styles.freeBadge}>
+                        <Text style={styles.freeBadgeText}>FREE</Text>
+                      </View>
+                    </View>
+                    <Text style={[styles.billValue, { color: '#059669', fontWeight: '700' }]}>
+                      ₹0
+                    </Text>
+                  </View>
+
+                  <View style={styles.billRow}>
+                    <Text style={styles.billLabel}>Neighborhood Insurance & Safety Guarantee</Text>
+                    <Text style={styles.billValue}>₹{platformFee}</Text>
+                  </View>
+
+                  <View style={styles.billDivider} />
+
+                  <View style={styles.billRowTotal}>
+                    <Text style={styles.totalLabel}>Total Payable</Text>
+                    <Text style={styles.totalAmount}>₹{grandTotal}</Text>
+                  </View>
+                </View>
+
+                {/* Trust guarantee pill */}
+                <View style={styles.guaranteeBox}>
+                  <Text style={styles.guaranteeIcon}>🛡️</Text>
+                  <Text style={styles.guaranteeText}>
+                    100% Satisfaction Guarantee · Verified Professionals · Free Cancellation
+                  </Text>
+                </View>
               </View>
             </>
           )}
         </View>
       </ScrollView>
+
+      {/* Sticky Bottom Checkout Footer */}
+      {!loading && selectedTasksList.length > 0 && (
+        <View style={styles.stickyFooter}>
+          <View style={styles.footerInner}>
+            <View style={styles.footerPriceColumn}>
+              <Text style={styles.footerTotalLabel}>TO PAY</Text>
+              <Text style={styles.footerTotalAmount}>₹{grandTotal}</Text>
+              <Text style={styles.footerItemsCount}>
+                {selectedTasksList.length} {selectedTasksList.length === 1 ? 'service' : 'services'}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.88}
+              onPress={handleConfirm}
+              disabled={saving}
+              style={[styles.confirmButton, saving && styles.confirmButtonDisabled]}
+            >
+              {saving ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <View style={styles.confirmButtonContent}>
+                  <Text style={styles.confirmButtonText}>Place Service Request</Text>
+                  <Text style={styles.confirmArrow}>→</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -264,15 +353,15 @@ export default function TaskConfirmationScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F8FAFC',
   },
-  container: {
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 64,
+  scrollContainer: {
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 120, // space for sticky checkout bar
   },
   centerContainer: {
-    maxWidth: 680,
+    maxWidth: 640,
     width: '100%',
     alignSelf: 'center',
   },
@@ -280,264 +369,398 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.05)',
-    marginBottom: 20,
+    marginBottom: 12,
     ...theme.shadows.subtle,
   },
   backButtonTop: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 8,
-    backgroundColor: '#F3F4F6',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    backgroundColor: '#F1F5F9',
   },
   backButtonTopText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#4B5563',
+    color: '#334155',
   },
-  header: {
-    marginBottom: 20,
-  },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: '#E8F5F1',
-    borderWidth: 1,
-    borderColor: '#C6EADE',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 9999,
-    marginBottom: 8,
-    gap: 6,
-  },
-  badgePulseDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#155C49',
-  },
-  badgeText: {
-    color: '#155C49',
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-  },
-  title: {
-    fontSize: 26,
-    lineHeight: 32,
-    fontWeight: '700',
-    color: '#111827',
-    letterSpacing: -0.5,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#4B5563',
-    lineHeight: 22,
-  },
-  summaryBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
+  sectionCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.04)',
-    marginBottom: 24,
+    borderColor: '#E2E8F0',
+    marginBottom: 12,
     ...theme.shadows.subtle,
   },
-  summaryItem: {
-    alignItems: 'center',
-  },
-  summaryValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  summaryLabel: {
-    fontSize: 10,
-    color: '#6B7280',
-    fontWeight: '700',
-    letterSpacing: 0.6,
-    marginTop: 2,
-  },
-  summaryDivider: {
-    width: 1,
-    height: 28,
-    backgroundColor: '#E5E7EB',
-  },
-  categorySection: {
-    marginBottom: 24,
-  },
-  categoryHeader: {
+  cardHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 10,
-    paddingHorizontal: 4,
   },
-  categoryTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
-    letterSpacing: -0.2,
-  },
-  countBadge: {
+  cardHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 9,
-    paddingVertical: 3,
-    borderRadius: 9999,
-    borderWidth: 1,
-    gap: 5,
-  },
-  chipDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-  },
-  countBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  tasksList: {
     gap: 10,
   },
-  taskCard: {
-    flexDirection: 'row',
+  locationPinBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#ECFDF5',
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.04)',
-    padding: 12,
-    ...theme.shadows.subtle,
   },
-  imageContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 10,
-    overflow: 'hidden',
-    backgroundColor: '#F3F4F6',
-    marginRight: 12,
+  locationPinIcon: {
+    fontSize: 16,
   },
-  taskImage: {
-    width: '100%',
-    height: '100%',
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.3,
   },
-  taskDetails: {
-    flex: 1,
-    marginRight: 12,
+  sectionSubtitle: {
+    fontSize: 11,
+    color: '#64748B',
   },
-  tagRow: {
-    flexDirection: 'row',
-    marginBottom: 4,
-  },
-  categoryTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  verifiedTag: {
+    backgroundColor: '#ECFDF5',
     paddingHorizontal: 7,
-    paddingVertical: 2.5,
-    borderRadius: 9999,
+    paddingVertical: 3,
+    borderRadius: 6,
     borderWidth: 1,
-    gap: 4,
+    borderColor: '#A7F3D0',
   },
-  tagDot: {
+  verifiedTagText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#047857',
+    letterSpacing: 0.5,
+  },
+  addressBox: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  addressName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: 2,
+  },
+  addressDetails: {
+    fontSize: 12,
+    color: '#64748B',
+    lineHeight: 18,
+  },
+  slotHint: {
+    fontSize: 11,
+    color: '#059669',
+    fontWeight: '600',
+  },
+  slotsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  slotPill: {
+    flex: 1,
+    minWidth: '45%',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  selectedSlotPill: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#155C49',
+    borderWidth: 1.5,
+  },
+  slotLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#334155',
+    marginBottom: 2,
+  },
+  selectedSlotLabel: {
+    color: '#155C49',
+    fontWeight: '800',
+  },
+  slotDesc: {
+    fontSize: 10,
+    color: '#64748B',
+  },
+  selectedSlotDesc: {
+    color: '#047857',
+  },
+  addMoreLink: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#155C49',
+  },
+  itemsList: {
+    marginTop: 4,
+  },
+  itemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    gap: 10,
+  },
+  itemRowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  itemThumb: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+  },
+  itemInfo: {
+    flex: 1,
+  },
+  itemTagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 2,
+  },
+  itemMicroTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
+    borderWidth: 1,
+    gap: 3,
+  },
+  itemTagDot: {
     width: 4,
     height: 4,
     borderRadius: 2,
   },
-  categoryTagText: {
-    fontSize: 9,
+  itemTagText: {
+    fontSize: 8,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  itemEtaText: {
+    fontSize: 10,
+    color: '#10B981',
     fontWeight: '700',
-    letterSpacing: 0.6,
   },
-  taskName: {
-    fontSize: 14,
+  itemName: {
+    fontSize: 13,
     fontWeight: '700',
-    color: '#111827',
-    marginBottom: 2,
-    letterSpacing: -0.2,
+    color: '#0F172A',
   },
-  taskDescription: {
-    fontSize: 12,
-    color: '#4B5563',
-    lineHeight: 17,
+  itemDesc: {
+    fontSize: 11,
+    color: '#64748B',
   },
-  verifiedCheck: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: '#E8F5F1',
+  itemPriceColumn: {
+    alignItems: 'flex-end',
+  },
+  itemPrice: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  itemOriginalPrice: {
+    fontSize: 10,
+    color: '#94A3B8',
+    textDecorationLine: 'line-through',
+  },
+  billTable: {
+    marginTop: 8,
+  },
+  billRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: 4,
   },
-  verifiedCheckText: {
-    color: '#155C49',
+  billLabel: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  billValue: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1E293B',
+  },
+  managerFeeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  freeBadge: {
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  freeBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#059669',
+  },
+  billDivider: {
+    height: 1,
+    backgroundColor: '#E2E8F0',
+    marginVertical: 8,
+  },
+  billRowTotal: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 2,
+  },
+  totalLabel: {
     fontSize: 14,
     fontWeight: '800',
+    color: '#0F172A',
   },
-  actionContainer: {
-    marginTop: 16,
-    gap: 12,
+  totalAmount: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#155C49',
+  },
+  guaranteeBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 8,
+    padding: 8,
+    marginTop: 10,
+    gap: 6,
+  },
+  guaranteeIcon: {
+    fontSize: 13,
+  },
+  guaranteeText: {
+    fontSize: 10,
+    color: '#475569',
+    fontWeight: '600',
+    flex: 1,
+  },
+  stickyFooter: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    ...theme.shadows.subtle,
+  },
+  footerInner: {
+    maxWidth: 640,
+    width: '100%',
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  footerPriceColumn: {
+    justifyContent: 'center',
+  },
+  footerTotalLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#64748B',
+    letterSpacing: 0.5,
+  },
+  footerTotalAmount: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.5,
+  },
+  footerItemsCount: {
+    fontSize: 11,
+    color: '#64748B',
   },
   confirmButton: {
-    width: '100%',
-  },
-  editButton: {
-    width: '100%',
-  },
-  centered: {
+    backgroundColor: '#155C49',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 32,
+    minWidth: 190,
+  },
+  confirmButtonDisabled: {
+    opacity: 0.7,
+  },
+  confirmButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  confirmButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
+  confirmArrow: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  centered: {
+    padding: 40,
+    alignItems: 'center',
   },
   loadingText: {
     marginTop: 12,
-    fontSize: 14,
-    color: '#4B5563',
+    fontSize: 13,
+    color: '#64748B',
   },
   emptyCard: {
-    padding: 28,
+    padding: 30,
     alignItems: 'center',
+    borderRadius: 16,
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
+    fontWeight: '800',
+    color: '#0F172A',
     marginBottom: 6,
   },
   emptySubtitle: {
     fontSize: 13,
-    color: '#4B5563',
+    color: '#64748B',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   backButton: {
     minWidth: 180,
   },
   errorBanner: {
     backgroundColor: '#FEF2F2',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 20,
-    borderLeftWidth: 4,
-    borderLeftColor: '#DC2626',
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 12,
   },
   errorBannerText: {
-    color: '#B91C1C',
-    fontSize: 13,
-    fontWeight: '600',
+    color: '#DC2626',
+    fontSize: 12,
+    textAlign: 'center',
   },
 });
