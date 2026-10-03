@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { BrandLogo, Button, Card } from '../../src/components';
+import { BrandLogo, Button, Card, HouseLocationModal } from '../../src/components';
 import {
   DATE_OPTIONS,
   DEFAULT_SERVICE_SLOT,
@@ -19,6 +19,7 @@ import {
   ServiceSlot,
   TIME_SLOT_OPTIONS,
 } from '../../src/constants/serviceIcons';
+import { addressStorage, HouseholdLocation } from '../../src/services/addressStorage';
 import { formatApiErrorMessage, profileApi, tasksApi } from '../../src/services/api';
 import { slotStorage } from '../../src/services/slotStorage';
 import { theme } from '../../src/theme';
@@ -47,18 +48,26 @@ export default function TaskConfirmationScreen() {
   const [unifiedSlotId, setUnifiedSlotId] = useState<string>('morning');
   const [activeCustomTaskId, setActiveCustomTaskId] = useState<string | null>(null);
 
+  // Household location management
+  const [activeLocation, setActiveLocation] = useState<HouseholdLocation | null>(null);
+  const [locationModalVisible, setLocationModalVisible] = useState(false);
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       setError(null);
       try {
-        const [cats, prof, savedSlots] = await Promise.all([
+        const [cats, prof, savedSlots, activeLoc] = await Promise.all([
           tasksApi.getCategories(),
           profileApi.getMyProfile().catch(() => null),
           slotStorage.getServiceSlots().catch(() => ({})),
+          addressStorage.getActiveLocation().catch(() => null),
         ]);
         setCategories(cats);
         setProfile(prof);
+        if (activeLoc) {
+          setActiveLocation(activeLoc);
+        }
 
         // Populate slots for all selected tasks
         const initialSlots: Record<string, ServiceSlot> = { ...(savedSlots || {}) };
@@ -238,7 +247,7 @@ export default function TaskConfirmationScreen() {
             </Card>
           ) : (
             <>
-              {/* 1. Delivery & Service Address Card (Blinkit style) */}
+              {/* 1. Delivery & Service Address Card with Multi-House Switcher */}
               <View style={styles.sectionCard}>
                 <View style={styles.cardHeaderRow}>
                   <View style={styles.cardHeaderLeft}>
@@ -250,15 +259,42 @@ export default function TaskConfirmationScreen() {
                       <Text style={styles.sectionSubtitle}>Verified Neighborhood Pro Coverage</Text>
                     </View>
                   </View>
-                  <View style={styles.verifiedTag}>
-                    <Text style={styles.verifiedTagText}>VERIFIED</Text>
-                  </View>
+                  <TouchableOpacity
+                    onPress={() => setLocationModalVisible(true)}
+                    activeOpacity={0.8}
+                    style={styles.changeAddressBtn}
+                  >
+                    <Text style={styles.changeAddressBtnText}>Change House ▾</Text>
+                  </TouchableOpacity>
                 </View>
 
-                <View style={styles.addressBox}>
-                  <Text style={styles.addressName}>{customerName} · {deliveryPhone}</Text>
-                  <Text style={styles.addressDetails}>{deliveryAddress}</Text>
-                </View>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={() => setLocationModalVisible(true)}
+                  style={styles.addressBox}
+                >
+                  <View style={styles.addressBoxHeader}>
+                    <View style={styles.addressTagBadge}>
+                      <Text style={styles.addressTagBadgeText}>
+                        {activeLocation?.tag.toUpperCase() || 'HOME'}
+                      </Text>
+                    </View>
+                    <Text style={styles.addressTitleText}>
+                      {activeLocation?.title || 'Primary Residence'}
+                    </Text>
+                  </View>
+                  <Text style={styles.addressName}>
+                    👤 {activeLocation?.recipientName || customerName} · 📞 {activeLocation?.phone || deliveryPhone}
+                  </Text>
+                  <Text style={styles.addressDetails}>
+                    {activeLocation?.fullAddress || deliveryAddress}
+                  </Text>
+                  {activeLocation?.landmark ? (
+                    <Text style={styles.addressLandmark}>
+                      📍 Landmark: {activeLocation.landmark}
+                    </Text>
+                  ) : null}
+                </TouchableOpacity>
               </View>
 
               {/* 2. Service Appointment Scheduling & Slot Selector */}
@@ -657,6 +693,14 @@ export default function TaskConfirmationScreen() {
           </View>
         </View>
       )}
+
+      {/* House / Service Location Switcher Modal */}
+      <HouseLocationModal
+        visible={locationModalVisible}
+        onClose={() => setLocationModalVisible(false)}
+        onSelectLocation={(loc) => setActiveLocation(loc)}
+        activeLocationId={activeLocation?.id}
+      />
     </SafeAreaView>
   );
 }
@@ -779,6 +823,19 @@ const styles = StyleSheet.create({
     color: '#047857',
     letterSpacing: 0.5,
   },
+  changeAddressBtn: {
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+  },
+  changeAddressBtnText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#047857',
+  },
   addressBox: {
     backgroundColor: '#F8FAFC',
     borderRadius: 10,
@@ -786,16 +843,44 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#F1F5F9',
   },
+  addressBoxHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  addressTagBadge: {
+    backgroundColor: '#155C49',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  addressTagBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 8.5,
+    fontWeight: '800',
+  },
+  addressTitleText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
   addressName: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     color: '#1E293B',
     marginBottom: 2,
   },
   addressDetails: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#64748B',
-    lineHeight: 18,
+    lineHeight: 16,
+  },
+  addressLandmark: {
+    fontSize: 10,
+    color: '#059669',
+    fontWeight: '600',
+    marginTop: 2,
   },
   /* Scheduling Strategy Switcher */
   strategyTabsRow: {
@@ -1309,29 +1394,29 @@ const styles = StyleSheet.create({
   footerButtonsGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   footerBackSecondary: {
     backgroundColor: '#F1F5F9',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
   footerBackSecondaryText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     color: '#334155',
   },
   confirmButton: {
     backgroundColor: '#155C49',
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 160,
+    minWidth: 130,
   },
   confirmButtonDisabled: {
     opacity: 0.7,
@@ -1343,13 +1428,13 @@ const styles = StyleSheet.create({
   },
   confirmButtonText: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '800',
     letterSpacing: 0.2,
   },
   confirmArrow: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '800',
   },
   centered: {

@@ -13,7 +13,7 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { BrandLogo, Button, Card } from '../../src/components';
+import { BrandLogo, Button, Card, HouseLocationModal } from '../../src/components';
 import {
   DATE_OPTIONS,
   DEFAULT_SERVICE_SLOT,
@@ -23,6 +23,7 @@ import {
   ServiceSlot,
   TIME_SLOT_OPTIONS,
 } from '../../src/constants/serviceIcons';
+import { addressStorage, HouseholdLocation } from '../../src/services/addressStorage';
 import { formatApiErrorMessage, profileApi, tasksApi } from '../../src/services/api';
 import { slotStorage } from '../../src/services/slotStorage';
 import { theme } from '../../src/theme';
@@ -49,6 +50,10 @@ export default function TaskSelectionScreen() {
   const [modalSlotId, setModalSlotId] = useState<string>('morning');
   const [modalInstructions, setModalInstructions] = useState<string>('');
 
+  // Household location management
+  const [activeLocation, setActiveLocation] = useState<HouseholdLocation | null>(null);
+  const [locationModalVisible, setLocationModalVisible] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,14 +61,18 @@ export default function TaskSelectionScreen() {
     setLoading(true);
     setError(null);
     try {
-      const [cats, mySelection, profileData, savedSlots] = await Promise.all([
+      const [cats, mySelection, profileData, savedSlots, activeLoc] = await Promise.all([
         tasksApi.getCategories(),
         tasksApi.getMySelectedTasks().catch(() => ({ total_count: 0, tasks: [] })),
         profileApi.getMyProfile().catch(() => null),
         slotStorage.getServiceSlots().catch(() => ({})),
+        addressStorage.getActiveLocation().catch(() => null),
       ]);
       setCategories(cats);
       setProfile(profileData);
+      if (activeLoc) {
+        setActiveLocation(activeLoc);
+      }
       if (savedSlots) {
         setSelectedSlots(savedSlots);
       }
@@ -235,15 +244,24 @@ export default function TaskSelectionScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.contentWrapper}>
-        {/* Top Brand Bar with Delivery Address Pill */}
+        {/* Top Brand Bar with Interactive Household Address Switcher */}
         <View style={styles.topBrandBar}>
           <BrandLogo size="xs" withText horizontal tagline="Quick Service" />
-          <View style={styles.deliveryLocationPill}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => setLocationModalVisible(true)}
+            style={styles.deliveryLocationPill}
+          >
             <View style={styles.locationDot} />
-            <Text style={styles.deliveryLabel} numberOfLines={1}>
-              {deliveryAddress}
-            </Text>
-          </View>
+            <View style={styles.deliveryTextCol}>
+              <Text style={styles.deliveryHouseholdTitle} numberOfLines={1}>
+                {activeLocation?.title || 'Deliver to'} ▾
+              </Text>
+              <Text style={styles.deliveryLabel} numberOfLines={1}>
+                {activeLocation?.fullAddress || deliveryAddress}
+              </Text>
+            </View>
+          </TouchableOpacity>
         </View>
 
         {/* Blinkit-Style Quick Commerce Search Header */}
@@ -799,8 +817,8 @@ export default function TaskSelectionScreen() {
                   <Text style={styles.cartDotSeparator}>•</Text>
                   <Text style={styles.cartTotalAmount}>₹{cartTotal}</Text>
                 </View>
-                <Text style={styles.cartSubtext}>
-                  📅 Custom appointment slots selected · Tap to review
+                <Text style={styles.cartSubtext} numberOfLines={1}>
+                  📅 {selectedTasksList.length} slot{selectedTasksList.length === 1 ? '' : 's'} set · Tap to review
                 </Text>
               </View>
             </View>
@@ -814,6 +832,14 @@ export default function TaskSelectionScreen() {
           </TouchableOpacity>
         </View>
       )}
+
+      {/* House / Service Location Switcher Modal */}
+      <HouseLocationModal
+        visible={locationModalVisible}
+        onClose={() => setLocationModalVisible(false)}
+        onSelectLocation={(loc) => setActiveLocation(loc)}
+        activeLocationId={activeLocation?.id}
+      />
     </SafeAreaView>
   );
 }
@@ -847,10 +873,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F1F5F9',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 9999,
-    maxWidth: 220,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    maxWidth: 195,
     gap: 6,
   },
   locationDot: {
@@ -859,10 +887,18 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: '#155C49',
   },
+  deliveryTextCol: {
+    flex: 1,
+  },
+  deliveryHouseholdTitle: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    color: '#155C49',
+  },
   deliveryLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#334155',
+    fontSize: 10,
+    color: '#64748B',
+    fontWeight: '500',
   },
   headerSection: {
     paddingHorizontal: 12,
@@ -1691,9 +1727,9 @@ const styles = StyleSheet.create({
   /* ===================== */
   floatingCartContainer: {
     position: 'absolute',
-    bottom: 16,
-    left: 14,
-    right: 14,
+    bottom: 12,
+    left: 8,
+    right: 8,
     maxWidth: 652,
     alignSelf: 'center',
     zIndex: 999,
@@ -1703,9 +1739,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#0F1E19',
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    borderRadius: 14,
+    paddingVertical: 9,
+    paddingHorizontal: 10,
     borderWidth: 1,
     borderColor: 'rgba(21, 92, 73, 0.4)',
     shadowColor: '#000000',
@@ -1717,67 +1753,75 @@ const styles = StyleSheet.create({
   cartLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
+    flex: 1,
+    marginRight: 6,
+    overflow: 'hidden',
   },
   thumbStack: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexShrink: 0,
   },
   stackThumb: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     borderWidth: 1.5,
     borderColor: '#0F1E19',
   },
   cartPriceDetails: {
     justifyContent: 'center',
+    flex: 1,
+    overflow: 'hidden',
   },
   cartTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 4,
   },
   cartItemCount: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     color: '#E2E8F0',
   },
   cartDotSeparator: {
-    fontSize: 13,
+    fontSize: 11,
     color: '#64748B',
   },
   cartTotalAmount: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '800',
     color: '#34D399',
   },
   cartSubtext: {
-    fontSize: 10,
+    fontSize: 9.5,
     color: '#94A3B8',
     marginTop: 1,
   },
   cartRight: {
     alignItems: 'center',
+    flexShrink: 0,
   },
   checkoutActionPill: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#155C49',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 8,
+    gap: 4,
+    flexShrink: 0,
   },
   checkoutActionText: {
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
   checkoutArrow: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '800',
   },
 });
