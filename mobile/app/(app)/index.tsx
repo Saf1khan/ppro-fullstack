@@ -12,9 +12,15 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { BrandLogo, Button, Card } from '../../src/components';
-import { getCategoryVisual, getTaskVisual } from '../../src/constants/serviceIcons';
+import {
+  DEFAULT_SERVICE_SLOT,
+  getCategoryVisual,
+  getTaskVisual,
+  ServiceSlot,
+} from '../../src/constants/serviceIcons';
 import { useAuth } from '../../src/context/AuthContext';
 import { profileApi, tasksApi } from '../../src/services/api';
+import { slotStorage } from '../../src/services/slotStorage';
 import { theme } from '../../src/theme';
 import { UserProfile } from '../../src/types/profile';
 import { Task } from '../../src/types/task';
@@ -27,6 +33,7 @@ export default function AppHomeScreen() {
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [selectedTasks, setSelectedTasks] = useState<Task[]>([]);
+  const [savedSlots, setSavedSlots] = useState<Record<string, ServiceSlot>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -36,12 +43,14 @@ export default function AppHomeScreen() {
 
   const loadData = useCallback(async () => {
     try {
-      const [profileData, tasksData] = await Promise.all([
+      const [profileData, tasksData, slotsData] = await Promise.all([
         profileApi.getMyProfile().catch(() => null),
         tasksApi.getMySelectedTasks().catch(() => ({ total_count: 0, tasks: [] })),
+        slotStorage.getServiceSlots().catch(() => ({})),
       ]);
       setProfile(profileData);
       setSelectedTasks(tasksData.tasks || []);
+      if (slotsData) setSavedSlots(slotsData);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -67,6 +76,12 @@ export default function AppHomeScreen() {
   };
 
   const initial = (profile?.full_name || user?.email || 'P').charAt(0).toUpperCase();
+
+  // Primary slot calculation for display
+  const primarySlot = selectedTasks[0]
+    ? savedSlots[selectedTasks[0].id] || DEFAULT_SERVICE_SLOT
+    : DEFAULT_SERVICE_SLOT;
+  const primarySlotString = `${primarySlot.dateLabel} (${primarySlot.timeRange})`;
 
   // Calculate order total
   const orderTotal = selectedTasks.reduce((acc, t) => {
@@ -270,7 +285,7 @@ export default function AppHomeScreen() {
                       <View style={styles.stageTitleCol}>
                         <Text style={styles.stageTitle}>Lifestyle Manager Assigned</Text>
                         <Text style={styles.stageDesc}>
-                          Your dedicated manager is actively coordinating technician arrival on-site.
+                          Your dedicated manager is actively coordinating technician arrival for your requested slot ({primarySlotString}).
                         </Text>
                       </View>
                     </View>
@@ -315,7 +330,7 @@ export default function AppHomeScreen() {
                     <View style={styles.etaAlertBox}>
                       <View style={styles.etaPulseDot} />
                       <Text style={styles.etaAlertText}>
-                        Technician dispatched to {profile?.address || 'your address'}. Estimated arrival in 25 mins.
+                        Technician confirmed for your chosen slot: {primarySlotString}. Pre-visit verification call 30 mins prior.
                       </Text>
                     </View>
                   </View>
@@ -400,6 +415,8 @@ export default function AppHomeScreen() {
                 ) : (
                   selectedTasks.map((task) => {
                     const visual = getTaskVisual(task.name);
+                    const taskSlot = savedSlots[task.id] || DEFAULT_SERVICE_SLOT;
+
                     return (
                       <View key={task.id} style={styles.taskCardItem}>
                         <Image
@@ -440,6 +457,13 @@ export default function AppHomeScreen() {
                           <Text style={styles.taskShortDesc} numberOfLines={1}>
                             {task.short_description}
                           </Text>
+
+                          {/* Confirmed Appointment Slot Pill */}
+                          <View style={styles.taskSlotBadge}>
+                            <Text style={styles.taskSlotText}>
+                              📅 {taskSlot.dateLabel} · {taskSlot.timeRange}
+                            </Text>
+                          </View>
                         </View>
 
                         <View style={styles.taskPriceColumn}>
@@ -960,6 +984,21 @@ const styles = StyleSheet.create({
   taskShortDesc: {
     fontSize: 11,
     color: '#64748B',
+  },
+  taskSlotBadge: {
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    alignSelf: 'flex-start',
+    marginTop: 4,
+  },
+  taskSlotText: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    color: '#047857',
   },
   taskPriceColumn: {
     alignItems: 'flex-end',

@@ -15,11 +15,16 @@ import {
 import { useRouter } from 'expo-router';
 import { BrandLogo, Button, Card } from '../../src/components';
 import {
+  DATE_OPTIONS,
+  DEFAULT_SERVICE_SLOT,
   getCategoryVisual,
   getTaskHighlights,
   getTaskVisual,
+  ServiceSlot,
+  TIME_SLOT_OPTIONS,
 } from '../../src/constants/serviceIcons';
 import { formatApiErrorMessage, profileApi, tasksApi } from '../../src/services/api';
+import { slotStorage } from '../../src/services/slotStorage';
 import { theme } from '../../src/theme';
 import { UserProfile } from '../../src/types/profile';
 import { CategoryWithTasks, Task } from '../../src/types/task';
@@ -36,6 +41,14 @@ export default function TaskSelectionScreen() {
   // Active task opened in the detailed inspection modal ("see the point what is actually")
   const [activeDetailTask, setActiveDetailTask] = useState<Task | null>(null);
 
+  // Per-service chosen appointment slot mapping: taskId -> ServiceSlot
+  const [selectedSlots, setSelectedSlots] = useState<Record<string, ServiceSlot>>({});
+
+  // Active modal date & time slot draft selections
+  const [modalDateId, setModalDateId] = useState<string>('tomorrow');
+  const [modalSlotId, setModalSlotId] = useState<string>('morning');
+  const [modalInstructions, setModalInstructions] = useState<string>('');
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,13 +56,17 @@ export default function TaskSelectionScreen() {
     setLoading(true);
     setError(null);
     try {
-      const [cats, mySelection, profileData] = await Promise.all([
+      const [cats, mySelection, profileData, savedSlots] = await Promise.all([
         tasksApi.getCategories(),
         tasksApi.getMySelectedTasks().catch(() => ({ total_count: 0, tasks: [] })),
         profileApi.getMyProfile().catch(() => null),
+        slotStorage.getServiceSlots().catch(() => ({})),
       ]);
       setCategories(cats);
       setProfile(profileData);
+      if (savedSlots) {
+        setSelectedSlots(savedSlots);
+      }
 
       if (mySelection.tasks && mySelection.tasks.length > 0) {
         setSelectedTaskIds(new Set(mySelection.tasks.map((t) => t.id)));
@@ -98,7 +115,16 @@ export default function TaskSelectionScreen() {
     return result;
   }, [allTasks, categories, activeCategorySlug, searchQuery]);
 
-  const toggleTask = (taskId: string) => {
+  const openTaskModal = (task: Task) => {
+    const existing = selectedSlots[task.id] || DEFAULT_SERVICE_SLOT;
+    setModalDateId(existing.dateId || 'tomorrow');
+    setModalSlotId(existing.slotId || 'morning');
+    setModalInstructions(existing.specialInstructions || '');
+    setActiveDetailTask(task);
+  };
+
+  const toggleTask = async (taskId: string) => {
+    const isAdding = !selectedTaskIds.has(taskId);
     setSelectedTaskIds((prev) => {
       const next = new Set(prev);
       if (next.has(taskId)) {
@@ -108,6 +134,61 @@ export default function TaskSelectionScreen() {
       }
       return next;
     });
+
+    if (isAdding) {
+      if (!selectedSlots[taskId]) {
+        const newSlots = { ...selectedSlots, [taskId]: DEFAULT_SERVICE_SLOT };
+        setSelectedSlots(newSlots);
+        await slotStorage.setServiceSlot(taskId, DEFAULT_SERVICE_SLOT);
+      }
+    } else {
+      await slotStorage.removeServiceSlot(taskId);
+      setSelectedSlots((prev) => {
+        const next = { ...prev };
+        delete next[taskId];
+        return next;
+      });
+    }
+  };
+
+  const handleSaveModalSlot = async () => {
+    if (!activeDetailTask) return;
+    const dateObj = DATE_OPTIONS.find((d) => d.id === modalDateId) || DATE_OPTIONS[1];
+    const slotObj = TIME_SLOT_OPTIONS.find((s) => s.id === modalSlotId) || TIME_SLOT_OPTIONS[0];
+
+    const slotData: ServiceSlot = {
+      dateId: dateObj.id,
+      dateLabel: `${dateObj.dayName} (${dateObj.dateLabel})`,
+      slotId: slotObj.id,
+      timeRange: slotObj.timeRange,
+      period: slotObj.period,
+      specialInstructions: modalInstructions.trim() || undefined,
+    };
+
+    const newSlots = { ...selectedSlots, [activeDetailTask.id]: slotData };
+    setSelectedSlots(newSlots);
+    await slotStorage.setServiceSlot(activeDetailTask.id, slotData);
+
+    if (!selectedTaskIds.has(activeDetailTask.id)) {
+      setSelectedTaskIds((prev) => new Set(prev).add(activeDetailTask.id));
+    }
+    setActiveDetailTask(null);
+  };
+
+  const handleRemoveFromModal = async () => {
+    if (!activeDetailTask) return;
+    setSelectedTaskIds((prev) => {
+      const next = new Set(prev);
+      next.delete(activeDetailTask.id);
+      return next;
+    });
+    await slotStorage.removeServiceSlot(activeDetailTask.id);
+    setSelectedSlots((prev) => {
+      const next = { ...prev };
+      delete next[activeDetailTask.id];
+      return next;
+    });
+    setActiveDetailTask(null);
   };
 
   // Cart total and selected tasks stack
@@ -124,8 +205,16 @@ export default function TaskSelectionScreen() {
     return { cartTotal: total, selectedTasksList: selected };
   }, [allTasks, selectedTaskIds]);
 
-  const handleReviewSelection = () => {
+  const handleReviewSelection = async () => {
     if (selectedTaskIds.size === 0) return;
+    const updatedSlots = { ...selectedSlots };
+    selectedTaskIds.forEach((id) => {
+      if (!updatedSlots[id]) {
+        updatedSlots[id] = DEFAULT_SERVICE_SLOT;
+      }
+    });
+    await slotStorage.setServiceSlots(updatedSlots);
+
     const idsString = Array.from(selectedTaskIds).join(',');
     router.push({
       pathname: '/(onboarding)/task-confirmation',
@@ -139,6 +228,9 @@ export default function TaskSelectionScreen() {
   const activeVisual = activeDetailTask ? getTaskVisual(activeDetailTask.name) : null;
   const activeHighlights = activeDetailTask ? getTaskHighlights(activeDetailTask.name) : [];
   const isActiveSelected = activeDetailTask ? selectedTaskIds.has(activeDetailTask.id) : false;
+
+  const currentModalDate = DATE_OPTIONS.find((d) => d.id === modalDateId) || DATE_OPTIONS[1];
+  const currentModalSlot = TIME_SLOT_OPTIONS.find((s) => s.id === modalSlotId) || TIME_SLOT_OPTIONS[0];
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -268,13 +360,14 @@ export default function TaskSelectionScreen() {
             renderItem={({ item }) => {
               const isSelected = selectedTaskIds.has(item.id);
               const taskVisual = getTaskVisual(item.name);
+              const assignedSlot = selectedSlots[item.id];
 
               return (
                 <View style={styles.cardWrapper}>
-                  {/* Tapping anywhere on the card opens the detailed scope inspection sheet */}
+                  {/* Tapping anywhere on the card opens the detailed scope & appointment slot sheet */}
                   <TouchableOpacity
                     activeOpacity={0.92}
-                    onPress={() => setActiveDetailTask(item)}
+                    onPress={() => openTaskModal(item)}
                     style={[styles.productCard, isSelected && styles.selectedProductCard]}
                   >
                     {/* Image with Badges */}
@@ -284,7 +377,7 @@ export default function TaskSelectionScreen() {
                         style={styles.cardImage}
                         resizeMode="cover"
                       />
-                      {/* Blinkit Quick ETA Badge */}
+                      {/* Realistic Service Duration Badge */}
                       <View style={styles.etaBadge}>
                         <Text style={styles.etaBadgeText}>{taskVisual.etaBadge}</Text>
                       </View>
@@ -328,8 +421,16 @@ export default function TaskSelectionScreen() {
                         {item.name}
                       </Text>
 
-                      {/* Tap to inspect hint */}
-                      <Text style={styles.viewDetailsText}>View what's included →</Text>
+                      {/* Tap to inspect hint / Scheduled Slot Badge */}
+                      {isSelected && assignedSlot ? (
+                        <View style={styles.cardScheduledPill}>
+                          <Text style={styles.cardScheduledText} numberOfLines={1}>
+                            📅 {assignedSlot.dateLabel.split(' ')[0]} · {assignedSlot.timeRange.split(' - ')[0]}
+                          </Text>
+                        </View>
+                      ) : (
+                        <Text style={styles.viewDetailsText}>Select slot & details →</Text>
+                      )}
 
                       {/* Pricing & Add Button Row */}
                       <View style={styles.priceActionRow}>
@@ -362,7 +463,7 @@ export default function TaskSelectionScreen() {
                               isSelected && styles.addButtonTextSelected,
                             ]}
                           >
-                            {isSelected ? 'ADDED ✓' : '+ ADD'}
+                            {isSelected ? '✓ ADDED' : '+ ADD'}
                           </Text>
                         </TouchableOpacity>
                       </View>
@@ -469,7 +570,7 @@ export default function TaskSelectionScreen() {
                 </View>
               </View>
 
-              {/* BULLET POINTS: What's Included / Scope of Work */}
+              {/* 1. BULLET POINTS: What's Included / Scope of Work */}
               <View style={styles.scopeSection}>
                 <View style={styles.scopeSectionHeader}>
                   <Text style={styles.scopeSectionTitle}>What is Included in this Service</Text>
@@ -488,20 +589,124 @@ export default function TaskSelectionScreen() {
                 </View>
               </View>
 
-              {/* HOW IT WORKS: Step by Step */}
+              {/* 2. APPOINTMENT TIME SLOT PICKER FOR THIS SERVICE */}
+              <View style={styles.scheduleSlotSection}>
+                <View style={styles.scopeSectionHeader}>
+                  <View style={styles.slotHeaderRow}>
+                    <Text style={styles.scopeSectionTitle}>Select Appointment Slot</Text>
+                    <View style={styles.slotDurationBadge}>
+                      <Text style={styles.slotDurationText}>{activeVisual?.etaBadge}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.scopeSectionSub}>
+                    Choose the exact date &amp; arrival window that fits your schedule
+                  </Text>
+                </View>
+
+                {/* Date Selection Horizontal Scroll */}
+                <Text style={styles.slotSubHeader}>1. SELECT PREFERRED DATE</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.dateSelectorRow}
+                >
+                  {DATE_OPTIONS.map((d) => {
+                    const isSelected = modalDateId === d.id;
+                    return (
+                      <TouchableOpacity
+                        key={d.id}
+                        activeOpacity={0.8}
+                        onPress={() => setModalDateId(d.id)}
+                        style={[styles.dateCard, isSelected && styles.dateCardActive]}
+                      >
+                        {d.badge && (
+                          <View style={[styles.dateBadgePill, isSelected && styles.dateBadgePillActive]}>
+                            <Text style={[styles.dateBadgeText, isSelected && styles.dateBadgeTextActive]}>
+                              {d.badge}
+                            </Text>
+                          </View>
+                        )}
+                        <Text style={[styles.dateCardDay, isSelected && styles.dateCardDayActive]}>
+                          {d.dayName}
+                        </Text>
+                        <Text style={[styles.dateCardDate, isSelected && styles.dateCardDateActive]}>
+                          {d.dateLabel}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+
+                {/* Arrival Window Grid */}
+                <Text style={[styles.slotSubHeader, { marginTop: 14 }]}>2. SELECT TIME WINDOW</Text>
+                <View style={styles.timeSlotsGrid}>
+                  {TIME_SLOT_OPTIONS.map((s) => {
+                    const isSelected = modalSlotId === s.id;
+                    return (
+                      <TouchableOpacity
+                        key={s.id}
+                        activeOpacity={0.85}
+                        onPress={() => setModalSlotId(s.id)}
+                        style={[styles.timeSlotCard, isSelected && styles.timeSlotCardActive]}
+                      >
+                        <View style={styles.timeSlotTopRow}>
+                          <Text style={styles.timeSlotIcon}>{s.icon}</Text>
+                          <Text style={[styles.timeSlotPeriod, isSelected && styles.timeSlotPeriodActive]}>
+                            {s.period}
+                          </Text>
+                        </View>
+                        <Text style={[styles.timeSlotRange, isSelected && styles.timeSlotRangeActive]}>
+                          {s.timeRange}
+                        </Text>
+                        <Text style={[styles.timeSlotDesc, isSelected && styles.timeSlotDescActive]} numberOfLines={1}>
+                          {s.desc}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                {/* Live Slot Confirmation Chip */}
+                <View style={styles.slotConfirmedChip}>
+                  <Text style={styles.slotConfirmedIcon}>✓</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.slotConfirmedTitle}>
+                      Scheduled for: {currentModalDate.dayName}, {currentModalDate.dateLabel} ({currentModalSlot.timeRange})
+                    </Text>
+                    <Text style={styles.slotConfirmedNote}>
+                      Estimated on-site execution: {activeVisual?.estimatedDuration}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Optional Instructions Input */}
+                <View style={styles.instructionsContainer}>
+                  <Text style={styles.instructionsLabel}>Special Instructions for Lifestyle Manager (Optional)</Text>
+                  <TextInput
+                    style={styles.instructionsInput}
+                    placeholder="e.g. Ring secondary bell, senior parents at home, parking info"
+                    placeholderTextColor="#94A3B8"
+                    value={modalInstructions}
+                    onChangeText={setModalInstructions}
+                    maxLength={150}
+                  />
+                </View>
+              </View>
+
+              {/* 3. HOW IT WORKS: Step by Step */}
               <View style={styles.howItWorksSection}>
                 <Text style={styles.howTitle}>How PadosiPro Handles It</Text>
                 <View style={styles.stepRow}>
                   <Text style={styles.stepNum}>1</Text>
-                  <Text style={styles.stepText}>Dedicated Lifestyle Manager verifies schedule & tools.</Text>
+                  <Text style={styles.stepText}>Dedicated Lifestyle Manager verifies your chosen slot &amp; equipment.</Text>
                 </View>
                 <View style={styles.stepRow}>
                   <Text style={styles.stepNum}>2</Text>
-                  <Text style={styles.stepText}>Certified background-checked pro arrives with genuine equipment.</Text>
+                  <Text style={styles.stepText}>Certified background-checked pro arrives on-time with genuine supplies.</Text>
                 </View>
                 <View style={styles.stepRow}>
                   <Text style={styles.stepNum}>3</Text>
-                  <Text style={styles.stepText}>Post-service cleanup, safety sign-off & 30-day warranty.</Text>
+                  <Text style={styles.stepText}>Post-service cleanup, safety sign-off &amp; 30-day warranty.</Text>
                 </View>
               </View>
 
@@ -511,48 +716,56 @@ export default function TaskSelectionScreen() {
                 <View style={styles.modalGuaranteeTextCol}>
                   <Text style={styles.modalGuaranteeTitle}>PadosiPro Service Guarantee</Text>
                   <Text style={styles.modalGuaranteeDesc}>
-                    30-Day Revisit Warranty · Certified Insurance · Free Cancellation
+                    30-Day Revisit Warranty · Certified Insurance · Free Slot Rescheduling
                   </Text>
                 </View>
               </View>
 
-              <View style={{ height: 90 }} />
+              <View style={{ height: 110 }} />
             </ScrollView>
 
             {/* Modal Bottom Sticky Decision Bar */}
             <View style={styles.modalBottomBar}>
               <View style={styles.modalBottomPriceCol}>
-                <Text style={styles.modalBottomPriceLabel}>PRICE</Text>
+                <Text style={styles.modalBottomPriceLabel}>TOTAL PRICE</Text>
                 <Text style={styles.modalBottomPriceValue}>{activeVisual?.priceFormatted}</Text>
               </View>
 
-              <TouchableOpacity
-                activeOpacity={0.88}
-                onPress={() => {
-                  if (activeDetailTask) {
-                    toggleTask(activeDetailTask.id);
-                  }
-                }}
-                style={[
-                  styles.modalDecisionButton,
-                  isActiveSelected && styles.modalDecisionButtonActive,
-                ]}
-              >
-                <Text
+              <View style={styles.modalBottomButtonsRow}>
+                {isActiveSelected && (
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={handleRemoveFromModal}
+                    style={styles.modalRemoveButton}
+                  >
+                    <Text style={styles.modalRemoveButtonText}>Remove</Text>
+                  </TouchableOpacity>
+                )}
+
+                <TouchableOpacity
+                  activeOpacity={0.88}
+                  onPress={handleSaveModalSlot}
                   style={[
-                    styles.modalDecisionButtonText,
-                    isActiveSelected && styles.modalDecisionButtonTextActive,
+                    styles.modalDecisionButton,
+                    isActiveSelected && styles.modalDecisionButtonActive,
                   ]}
                 >
-                  {isActiveSelected ? '✓ Added · Tap to Remove' : '+ Add Service to Selection'}
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={[
+                      styles.modalDecisionButtonText,
+                      isActiveSelected && styles.modalDecisionButtonTextActive,
+                    ]}
+                  >
+                    {isActiveSelected ? '✓ Update Slot' : '+ Confirm Slot & Add'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </View>
       </Modal>
 
-      {/* Blinkit-Style Persistent Floating Bottom Checkout Bar */}
+      {/* Persistent Floating Bottom Checkout Bar */}
       {selectedTaskIds.size > 0 && (
         <View style={styles.floatingCartContainer}>
           <TouchableOpacity
@@ -560,19 +773,19 @@ export default function TaskSelectionScreen() {
             onPress={handleReviewSelection}
             style={styles.floatingCartBar}
           >
-            {/* Left: Thumbnail Stack + Item Count & Total */}
             <View style={styles.cartLeft}>
               <View style={styles.thumbStack}>
-                {selectedTasksList.slice(0, 3).map((task, idx) => {
-                  const visual = getTaskVisual(task.name);
+                {selectedTasksList.slice(0, 3).map((item, idx) => {
+                  const v = getTaskVisual(item.name);
                   return (
                     <Image
-                      key={task.id}
-                      source={{ uri: visual.image }}
+                      key={item.id}
+                      source={{ uri: v.image }}
                       style={[
                         styles.stackThumb,
-                        { marginLeft: idx === 0 ? 0 : -10, zIndex: 10 - idx },
+                        { marginLeft: idx > 0 ? -10 : 0, zIndex: 10 - idx },
                       ]}
+                      resizeMode="cover"
                     />
                   );
                 })}
@@ -581,19 +794,20 @@ export default function TaskSelectionScreen() {
               <View style={styles.cartPriceDetails}>
                 <View style={styles.cartTitleRow}>
                   <Text style={styles.cartItemCount}>
-                    {selectedTaskIds.size} {selectedTaskIds.size === 1 ? 'Service' : 'Services'}
+                    {selectedTasksList.length} {selectedTasksList.length === 1 ? 'Service' : 'Services'}
                   </Text>
-                  <Text style={styles.cartDotSeparator}>·</Text>
+                  <Text style={styles.cartDotSeparator}>•</Text>
                   <Text style={styles.cartTotalAmount}>₹{cartTotal}</Text>
                 </View>
-                <Text style={styles.cartSubtext}>PadosiPro Guarantee Included</Text>
+                <Text style={styles.cartSubtext}>
+                  📅 Custom appointment slots selected · Tap to review
+                </Text>
               </View>
             </View>
 
-            {/* Right: Checkout Button */}
             <View style={styles.cartRight}>
               <View style={styles.checkoutActionPill}>
-                <Text style={styles.checkoutActionText}>View Cart</Text>
+                <Text style={styles.checkoutActionText}>Review &amp; Book</Text>
                 <Text style={styles.checkoutArrow}>→</Text>
               </View>
             </View>
@@ -1251,6 +1465,225 @@ const styles = StyleSheet.create({
   },
   modalDecisionButtonTextActive: {
     color: '#155C49',
+  },
+
+  /* Card Scheduled Slot Badge */
+  cardScheduledPill: {
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    alignSelf: 'flex-start',
+    marginBottom: 4,
+  },
+  cardScheduledText: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    color: '#047857',
+  },
+
+  /* ================================= */
+  /* MODAL APPOINTMENT SCHEDULING      */
+  /* ================================= */
+  scheduleSlotSection: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 14,
+  },
+  slotHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 2,
+  },
+  slotDurationBadge: {
+    backgroundColor: '#EFF8FF',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+  },
+  slotDurationText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#0284C7',
+  },
+  slotSubHeader: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+    color: '#64748B',
+    marginBottom: 8,
+    marginTop: 4,
+  },
+  dateSelectorRow: {
+    gap: 8,
+    paddingBottom: 4,
+  },
+  dateCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    minWidth: 70,
+  },
+  dateCardActive: {
+    borderColor: '#155C49',
+    backgroundColor: '#ECFDF5',
+  },
+  dateBadgePill: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
+    marginBottom: 3,
+  },
+  dateBadgePillActive: {
+    backgroundColor: '#155C49',
+  },
+  dateBadgeText: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: '#64748B',
+  },
+  dateBadgeTextActive: {
+    color: '#FFFFFF',
+  },
+  dateCardDay: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#1E293B',
+  },
+  dateCardDayActive: {
+    color: '#155C49',
+  },
+  dateCardDate: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#64748B',
+    marginTop: 1,
+  },
+  dateCardDateActive: {
+    color: '#047857',
+  },
+  timeSlotsGrid: {
+    gap: 8,
+  },
+  timeSlotCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+  },
+  timeSlotCardActive: {
+    borderColor: '#155C49',
+    backgroundColor: '#ECFDF5',
+  },
+  timeSlotTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 2,
+  },
+  timeSlotIcon: {
+    fontSize: 14,
+  },
+  timeSlotPeriod: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#1E293B',
+  },
+  timeSlotPeriodActive: {
+    color: '#155C49',
+  },
+  timeSlotRange: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#334155',
+  },
+  timeSlotRangeActive: {
+    color: '#047857',
+  },
+  timeSlotDesc: {
+    fontSize: 10,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  timeSlotDescActive: {
+    color: '#065F46',
+  },
+  slotConfirmedChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0FDF4',
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    marginTop: 12,
+    gap: 8,
+  },
+  slotConfirmedIcon: {
+    fontSize: 14,
+    color: '#16A34A',
+    fontWeight: '900',
+  },
+  slotConfirmedTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#166534',
+  },
+  slotConfirmedNote: {
+    fontSize: 10,
+    color: '#15803D',
+    marginTop: 1,
+  },
+  instructionsContainer: {
+    marginTop: 12,
+  },
+  instructionsLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#475569',
+    marginBottom: 5,
+  },
+  instructionsInput: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 11,
+    color: '#0F172A',
+  },
+  modalBottomButtonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  modalRemoveButton: {
+    backgroundColor: '#FEE2E2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  modalRemoveButtonText: {
+    color: '#DC2626',
+    fontSize: 11,
+    fontWeight: '800',
   },
 
   /* ===================== */

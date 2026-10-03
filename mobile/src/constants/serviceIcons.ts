@@ -20,8 +20,57 @@ export interface TaskVisual {
   priceFormatted: string;
   originalPriceFormatted?: string;
   etaBadge: string;
+  estimatedDuration: string;
+  slotAvailabilityBadge: string;
   ratingScore: string;
 }
+
+export interface TimeSlotOption {
+  id: string;
+  period: string;
+  timeRange: string;
+  desc: string;
+  icon: string;
+}
+
+export interface DateOption {
+  id: string;
+  dayName: string;
+  dateLabel: string;
+  badge?: string;
+}
+
+export interface ServiceSlot {
+  dateId: string;
+  dateLabel: string;
+  slotId: string;
+  timeRange: string;
+  period: string;
+  specialInstructions?: string;
+}
+
+export const DATE_OPTIONS: DateOption[] = [
+  { id: 'today', dayName: 'Today', dateLabel: '03 Oct', badge: 'Fastest' },
+  { id: 'tomorrow', dayName: 'Tomorrow', dateLabel: '04 Oct', badge: 'Popular' },
+  { id: 'day3', dayName: 'Sun', dateLabel: '05 Oct', badge: 'Weekend' },
+  { id: 'day4', dayName: 'Mon', dateLabel: '06 Oct' },
+  { id: 'day5', dayName: 'Tue', dateLabel: '07 Oct' },
+];
+
+export const TIME_SLOT_OPTIONS: TimeSlotOption[] = [
+  { id: 'morning', period: 'Morning', timeRange: '09:00 AM - 12:00 PM', desc: 'Optimal for thorough work & deep cleaning', icon: '🌅' },
+  { id: 'afternoon', period: 'Afternoon', timeRange: '01:00 PM - 04:00 PM', desc: 'Convenient mid-day servicing', icon: '☀️' },
+  { id: 'evening', period: 'Evening', timeRange: '04:00 PM - 07:00 PM', desc: 'After-work / post-office window', icon: '🌇' },
+  { id: 'night', period: 'Late Evening', timeRange: '07:00 PM - 09:00 PM', desc: 'Flexible quiet evening coordination', icon: '🌙' },
+];
+
+export const DEFAULT_SERVICE_SLOT: ServiceSlot = {
+  dateId: 'tomorrow',
+  dateLabel: 'Tomorrow (04 Oct)',
+  slotId: 'morning',
+  timeRange: '09:00 AM - 12:00 PM',
+  period: 'Morning',
+};
 
 export const CATEGORY_VISUALS: Record<string, CategoryVisual> = {
   'deep-cleaning': {
@@ -78,7 +127,10 @@ export function getCategoryVisual(slugOrName?: string): CategoryVisual {
   return DEFAULT_CATEGORY_VISUAL;
 }
 
-export type TaskVisualConfig = Omit<TaskVisual, 'priceNumeric' | 'priceFormatted' | 'etaBadge' | 'ratingScore'>;
+export type TaskVisualConfig = Omit<
+  TaskVisual,
+  'priceNumeric' | 'priceFormatted' | 'etaBadge' | 'estimatedDuration' | 'slotAvailabilityBadge' | 'ratingScore'
+>;
 
 export const TASK_VISUALS: Record<string, TaskVisualConfig> = {
   'kitchen deep degreasing & chimney scrub': {
@@ -349,10 +401,11 @@ export function getTaskVisual(taskName: string): TaskVisual {
     };
   }
 
-  // Derive deterministic realistic pricing and ETA if not specified
+  // Derive deterministic realistic pricing and duration based on service requirements
   let price = 499;
   let original = 749;
-  let eta = '⚡ 30 MINS';
+  let duration = '⏱️ 45-60m';
+  let estimated = '45-60 mins on-site execution';
   let rating = '4.9';
 
   const cat = (base.category || '').toLowerCase();
@@ -362,53 +415,62 @@ export function getTaskVisual(taskName: string): TaskVisual {
     if (name.includes('move-in') || name.includes('renovation')) {
       price = 1499;
       original = 1999;
-      eta = '⚡ 60 MINS';
+      duration = '⏱️ 3 - 4 hrs';
+      estimated = '3 - 4 hours comprehensive deep scrubbing';
       rating = '5.0';
     } else if (name.includes('chimney') || name.includes('kitchen')) {
       price = 599;
       original = 899;
-      eta = '⚡ 45 MINS';
+      duration = '⏱️ 60-90m';
+      estimated = '60-90 mins intensive degreasing';
       rating = '4.9';
     } else {
       price = 449;
       original = 699;
-      eta = '⚡ 30 MINS';
+      duration = '⏱️ 45-60m';
+      estimated = '45-60 mins thorough scrub';
       rating = '4.8';
     }
   } else if (cat.includes('plumb') || name.includes('drain') || name.includes('pipe') || name.includes('tap')) {
     if (name.includes('acoustic') || name.includes('tank')) {
       price = 649;
       original = 949;
-      eta = '⚡ 45 MINS';
+      duration = '⏱️ 60-90m';
+      estimated = '60-90 mins precision acoustic diagnostic';
       rating = '4.9';
     } else {
       price = 299;
       original = 499;
-      eta = '⚡ 20 MINS';
+      duration = '⏱️ 30-45m';
+      estimated = '30-45 mins leak repair';
       rating = '4.8';
     }
   } else if (cat.includes('elect') || name.includes('fan') || name.includes('switch') || name.includes('light')) {
     if (name.includes('inverter') || name.includes('chandelier') || name.includes('breaker')) {
       price = 549;
       original = 799;
-      eta = '⚡ 30 MINS';
+      duration = '⏱️ 60-90m';
+      estimated = '60-90 mins calibrated heavy wiring';
       rating = '5.0';
     } else {
       price = 249;
       original = 399;
-      eta = '⚡ 15 MINS';
+      duration = '⏱️ 30-45m';
+      estimated = '30-45 mins diagnostic & fixture fit';
       rating = '4.9';
     }
   } else if (cat.includes('appliance') || name.includes('ac') || name.includes('geyser') || name.includes('ro')) {
     if (name.includes('ac') || name.includes('magnetron')) {
       price = 699;
       original = 999;
-      eta = '⚡ 40 MINS';
+      duration = '⏱️ 60-90m';
+      estimated = '60-90 mins pressure testing & gas tuning';
       rating = '4.9';
     } else {
       price = 499;
       original = 749;
-      eta = '⚡ 30 MINS';
+      duration = '⏱️ 45-60m';
+      estimated = '45-60 mins multi-point check';
       rating = '4.8';
     }
   }
@@ -421,11 +483,13 @@ export function getTaskVisual(taskName: string): TaskVisual {
     borderColor: base.borderColor || '#A7F3D0',
     textColor: base.textColor || '#047857',
     dotColor: base.dotColor || '#10B981',
-    tagSecondary: base.tagSecondary || '★ 4.9 · 30m',
+    tagSecondary: base.tagSecondary || '★ 4.9 · Verified',
     priceNumeric: price,
     priceFormatted: `₹${price}`,
     originalPriceFormatted: `₹${original}`,
-    etaBadge: eta,
+    etaBadge: duration,
+    estimatedDuration: estimated,
+    slotAvailabilityBadge: '📅 Select Slot',
     ratingScore: rating,
   };
 }
