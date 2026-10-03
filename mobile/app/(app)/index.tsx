@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { BrandLogo, Button, Card } from '../../src/components';
+import { BrandLogo, Button, Card, ProfileAccountModal } from '../../src/components';
 import {
   DEFAULT_SERVICE_SLOT,
   getCategoryVisual,
@@ -37,6 +37,7 @@ export default function AppHomeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
 
   // Enterprise status simulation state: 'submitted' | 'in_progress' | 'done'
   const [currentStatus, setCurrentStatus] = useState<PipelineStatus>('in_progress');
@@ -115,7 +116,11 @@ export default function AppHomeScreen() {
           </View>
 
           {/* User Profile Bar */}
-          <View style={styles.profileBar}>
+          <TouchableOpacity
+            style={styles.profileBar}
+            activeOpacity={0.85}
+            onPress={() => setProfileModalVisible(true)}
+          >
             <View style={styles.avatarCircle}>
               <Text style={styles.avatarLetter}>{initial}</Text>
             </View>
@@ -125,6 +130,7 @@ export default function AppHomeScreen() {
                   <View style={styles.statusDot} />
                   <Text style={styles.statusPillText}>ACTIVE HOUSEHOLD</Text>
                 </View>
+                <Text style={styles.viewProfileHint}>Tap to view profile ▾</Text>
               </View>
               <Text style={styles.userName}>
                 {profile ? profile.full_name : 'Welcome Member'}
@@ -133,7 +139,7 @@ export default function AppHomeScreen() {
                 📍 {profile?.address || user?.email}
               </Text>
             </View>
-          </View>
+          </TouchableOpacity>
 
           {loading ? (
             <View style={styles.centered}>
@@ -513,6 +519,13 @@ export default function AppHomeScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* User Profile & Account Logout Modal */}
+      <ProfileAccountModal
+        visible={profileModalVisible}
+        onClose={() => setProfileModalVisible(false)}
+        profile={profile}
+      />
     </SafeAreaView>
   );
 }
@@ -586,7 +599,14 @@ const styles = StyleSheet.create({
   },
   badgeRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 2,
+  },
+  viewProfileHint: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#059669',
   },
   statusPill: {
     flexDirection: 'row',

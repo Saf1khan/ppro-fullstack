@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -16,7 +17,7 @@ import { theme } from '../../src/theme';
 
 export default function ProfileOnboardingScreen() {
   const router = useRouter();
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, logout } = useAuth();
 
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -90,7 +91,16 @@ export default function ProfileOnboardingScreen() {
           <View style={styles.centerContainer}>
             {/* Top Brand Bar */}
             <View style={styles.topBrandBar}>
-              <BrandLogo size="sm" withText horizontal tagline="Provider Onboarding" />
+              <BrandLogo size="xs" withText horizontal tagline="Provider Onboarding" />
+              <TouchableOpacity
+                onPress={async () => {
+                  await logout();
+                  router.replace('/(auth)/login');
+                }}
+                style={styles.topLogoutButton}
+              >
+                <Text style={styles.topLogoutText}>Sign Out</Text>
+              </TouchableOpacity>
             </View>
 
             {/* Header */}
@@ -221,6 +231,17 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0, 0, 0, 0.05)',
     marginBottom: 20,
     ...theme.shadows.subtle,
+  },
+  topLogoutButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    backgroundColor: '#F1F5F9',
+  },
+  topLogoutText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#475569',
   },
   header: {
     marginBottom: 20,

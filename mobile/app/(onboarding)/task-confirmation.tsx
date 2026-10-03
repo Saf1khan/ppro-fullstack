@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { BrandLogo, Button, Card, HouseLocationModal } from '../../src/components';
+import { BrandLogo, Button, Card, HouseLocationModal, ProfileAccountModal } from '../../src/components';
 import {
   DATE_OPTIONS,
   DEFAULT_SERVICE_SLOT,
@@ -25,6 +25,7 @@ import { slotStorage } from '../../src/services/slotStorage';
 import { theme } from '../../src/theme';
 import { UserProfile } from '../../src/types/profile';
 import { CategoryWithTasks, Task } from '../../src/types/task';
+import { useAuth } from '../../src/context/AuthContext';
 
 export default function TaskConfirmationScreen() {
   const router = useRouter();
@@ -51,6 +52,11 @@ export default function TaskConfirmationScreen() {
   // Household location management
   const [activeLocation, setActiveLocation] = useState<HouseholdLocation | null>(null);
   const [locationModalVisible, setLocationModalVisible] = useState(false);
+
+  // Profile and Account modal
+  const { user } = useAuth();
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
+  const userInitial = (profile?.full_name || user?.email || 'P').charAt(0).toUpperCase();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -219,7 +225,18 @@ export default function TaskConfirmationScreen() {
               </View>
             </TouchableOpacity>
 
-            <BrandLogo size="xs" withText horizontal tagline="Checkout" />
+            <View style={styles.topNavRight}>
+              <BrandLogo size="xs" withText horizontal tagline="Checkout" />
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => setProfileModalVisible(true)}
+                style={styles.userProfileAvatarBtn}
+                accessibilityLabel="View Profile and Account"
+              >
+                <Text style={styles.userProfileAvatarInitial}>{userInitial}</Text>
+                <View style={styles.userProfileActiveDot} />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {error ? (
@@ -701,6 +718,14 @@ export default function TaskConfirmationScreen() {
         onSelectLocation={(loc) => setActiveLocation(loc)}
         activeLocationId={activeLocation?.id}
       />
+
+      {/* User Profile & Account Logout Modal */}
+      <ProfileAccountModal
+        visible={profileModalVisible}
+        onClose={() => setProfileModalVisible(false)}
+        profile={profile}
+        onOpenLocations={() => setLocationModalVisible(true)}
+      />
     </SafeAreaView>
   );
 }
@@ -732,6 +757,37 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0, 0, 0, 0.05)',
     marginBottom: 12,
     ...theme.shadows.subtle,
+  },
+  topNavRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  userProfileAvatarBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#155C49',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    ...theme.shadows.subtle,
+  },
+  userProfileAvatarInitial: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  userProfileActiveDot: {
+    position: 'absolute',
+    bottom: -1,
+    right: -1,
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+    backgroundColor: '#10B981',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
   },
   backButtonTop: {
     flexDirection: 'row',

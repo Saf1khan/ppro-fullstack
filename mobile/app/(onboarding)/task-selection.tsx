@@ -13,7 +13,7 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { BrandLogo, Button, Card, HouseLocationModal } from '../../src/components';
+import { BrandLogo, Button, Card, HouseLocationModal, ProfileAccountModal } from '../../src/components';
 import {
   DATE_OPTIONS,
   DEFAULT_SERVICE_SLOT,
@@ -23,6 +23,7 @@ import {
   ServiceSlot,
   TIME_SLOT_OPTIONS,
 } from '../../src/constants/serviceIcons';
+import { useAuth } from '../../src/context/AuthContext';
 import { addressStorage, HouseholdLocation } from '../../src/services/addressStorage';
 import { formatApiErrorMessage, profileApi, tasksApi } from '../../src/services/api';
 import { slotStorage } from '../../src/services/slotStorage';
@@ -53,6 +54,11 @@ export default function TaskSelectionScreen() {
   // Household location management
   const [activeLocation, setActiveLocation] = useState<HouseholdLocation | null>(null);
   const [locationModalVisible, setLocationModalVisible] = useState(false);
+
+  // Profile & Account view modal
+  const { user } = useAuth();
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
+  const userInitial = (profile?.full_name || user?.email || 'P').charAt(0).toUpperCase();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -244,24 +250,36 @@ export default function TaskSelectionScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.contentWrapper}>
-        {/* Top Brand Bar with Interactive Household Address Switcher */}
+        {/* Top Brand Bar with Household Switcher & User Profile Avatar */}
         <View style={styles.topBrandBar}>
           <BrandLogo size="xs" withText horizontal tagline="Quick Service" />
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => setLocationModalVisible(true)}
-            style={styles.deliveryLocationPill}
-          >
-            <View style={styles.locationDot} />
-            <View style={styles.deliveryTextCol}>
-              <Text style={styles.deliveryHouseholdTitle} numberOfLines={1}>
-                {activeLocation?.title || 'Deliver to'} ▾
-              </Text>
-              <Text style={styles.deliveryLabel} numberOfLines={1}>
-                {activeLocation?.fullAddress || deliveryAddress}
-              </Text>
-            </View>
-          </TouchableOpacity>
+
+          <View style={styles.topBarRightGroup}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setLocationModalVisible(true)}
+              style={styles.deliveryLocationPill}
+            >
+              <View style={styles.locationDot} />
+              <View style={styles.deliveryTextCol}>
+                <Text style={styles.deliveryHouseholdTitle} numberOfLines={1}>
+                  {activeLocation?.title || 'Deliver to'} ▾
+                </Text>
+                <Text style={styles.deliveryLabel} numberOfLines={1}>
+                  {activeLocation?.fullAddress || deliveryAddress}
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setProfileModalVisible(true)}
+              style={styles.userProfileAvatarBtn}
+            >
+              <Text style={styles.userProfileAvatarInitial}>{userInitial}</Text>
+              <View style={styles.userProfileActiveDot} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Blinkit-Style Quick Commerce Search Header */}
@@ -840,6 +858,14 @@ export default function TaskSelectionScreen() {
         onSelectLocation={(loc) => setActiveLocation(loc)}
         activeLocationId={activeLocation?.id}
       />
+
+      {/* User Profile & Account Logout Modal */}
+      <ProfileAccountModal
+        visible={profileModalVisible}
+        onClose={() => setProfileModalVisible(false)}
+        profile={profile}
+        onOpenLocations={() => setLocationModalVisible(true)}
+      />
     </SafeAreaView>
   );
 }
@@ -869,6 +895,37 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0, 0, 0, 0.05)',
     ...theme.shadows.subtle,
   },
+  topBarRightGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  userProfileAvatarBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#155C49',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    ...theme.shadows.subtle,
+  },
+  userProfileAvatarInitial: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  userProfileActiveDot: {
+    position: 'absolute',
+    bottom: -1,
+    right: -1,
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+    backgroundColor: '#10B981',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
   deliveryLocationPill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -878,7 +935,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    maxWidth: 195,
+    maxWidth: 160,
     gap: 6,
   },
   locationDot: {
